@@ -1,12 +1,24 @@
-import { createGzFetch } from '@lishenchan/gz-pc/fetch';
+import {
+  configureGzFetch,
+  createGzFetch,
+  gzFetch,
+} from '@lishenchan/gz-pc/fetch';
 import { useRequest } from '@lishenchan/gz-pc/hooks';
-import { formatDate } from '@lishenchan/gz-pc/utils';
+import {
+  formatDate,
+  objectToQuery,
+  queryToObject,
+} from '@lishenchan/gz-pc/utils';
 import { createRequire } from 'node:module';
 
 if (
   typeof createGzFetch !== 'function' ||
+  typeof configureGzFetch !== 'function' ||
+  typeof gzFetch !== 'function' ||
   typeof useRequest !== 'function' ||
-  typeof formatDate !== 'function'
+  typeof formatDate !== 'function' ||
+  typeof objectToQuery !== 'function' ||
+  typeof queryToObject !== 'function'
 ) {
   throw new TypeError('One or more package subpath exports are invalid.');
 }
@@ -18,8 +30,12 @@ const utilsCjs = require('@lishenchan/gz-pc/utils');
 
 if (
   typeof fetchCjs.createGzFetch !== 'function' ||
+  typeof fetchCjs.configureGzFetch !== 'function' ||
+  typeof fetchCjs.gzFetch !== 'function' ||
   typeof hooksCjs.useRequest !== 'function' ||
-  typeof utilsCjs.formatDate !== 'function'
+  typeof utilsCjs.formatDate !== 'function' ||
+  typeof utilsCjs.objectToQuery !== 'function' ||
+  typeof utilsCjs.queryToObject !== 'function'
 ) {
   throw new TypeError('One or more CommonJS subpath exports are invalid.');
 }

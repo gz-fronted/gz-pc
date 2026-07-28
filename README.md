@@ -32,10 +32,11 @@ gz-fetch **只有在 HTTP Status 为 200 时才认为请求成功**。201、204 
 - 转换分页、字段、日期或任何服务端数据
 
 ```ts
-import { createGzFetch } from '@lishenchan/gz-pc/fetch';
+import { configureGzFetch, gzFetch } from "@lishenchan/gz-pc/fetch";
 
-const gzFetch = createGzFetch({
-  baseURL: '/api',
+// 应用初始化入口只调用一次；微前端重新挂载时可以覆盖上一次配置。
+configureGzFetch({
+  baseURL: "/api",
   timeout: 15_000,
   getToken: () => runtimeToken,
   showErrorMessage: true,
@@ -47,8 +48,8 @@ interface ListResult {
 }
 
 const result = await gzFetch<ListResult>({
-  url: '/users',
-  method: 'GET',
+  url: "/users",
+  method: "GET",
   params: {
     page: 1,
     pageSize: 20,
@@ -62,17 +63,21 @@ interface CreateUserParams {
 }
 
 await gzFetch<ListResult, CreateUserParams>({
-  url: '/users',
-  method: 'POST',
+  url: "/users",
+  method: "POST",
   data: {
-    name: 'Alice',
+    name: "Alice",
   },
 });
 ```
 
-gz-pc 统一使用配置对象式请求调用。业务代码不得混用 `gzFetch(config)` 与
+业务模块直接导入并调用 `gzFetch`，不需要自行创建请求实例。gz-pc 统一使用
+配置对象式请求调用，业务代码不得混用 `gzFetch(config)` 与
 `gzFetch.get/post/put/delete` 两种风格。快捷方法仅作为内部兼容层保留，不作为
 业务开发规范。
+
+如果在 `configureGzFetch` 之前调用 `gzFetch`，会明确抛出错误，不会静默使用
+空配置，也不会读取 `localStorage`。
 
 ## Token
 
@@ -82,13 +87,13 @@ gz-pc 统一使用配置对象式请求调用。业务代码不得混用 `gzFetc
 默认请求头为 `Authorization: Bearer <token>`：
 
 ```ts
-const gzFetch = createGzFetch({
+configureGzFetch({
   getToken: async () => tokenStore.get(),
 });
 
 await gzFetch<PublicConfig>({
-  url: '/public/config',
-  method: 'GET',
+  url: "/public/config",
+  method: "GET",
   skipAuth: true,
 });
 ```
@@ -96,10 +101,10 @@ await gzFetch<PublicConfig>({
 也可以修改 Header 名称和格式：
 
 ```ts
-const gzFetch = createGzFetch({
+configureGzFetch({
   getToken: () => token,
   auth: {
-    headerName: 'X-Token',
+    headerName: "X-Token",
     formatToken: (value) => `Token ${value}`,
   },
 });
@@ -121,11 +126,11 @@ HTTP 非 200 时仅尝试读取响应体的 `msg`。没有有效 `msg` 时使用
 错误 Message 默认开启，优先级为“单请求配置 > 实例配置 > 默认值 true”：
 
 ```ts
-const gzFetch = createGzFetch({ showErrorMessage: true });
+configureGzFetch({ showErrorMessage: true });
 
 await gzFetch<void, SaveParams>({
-  url: '/save',
-  method: 'POST',
+  url: "/save",
+  method: "POST",
   data,
   showErrorMessage: false,
 });
@@ -137,8 +142,8 @@ await gzFetch<void, SaveParams>({
 const controller = new AbortController();
 
 const promise = gzFetch<UserDetail>({
-  url: '/users',
-  method: 'GET',
+  url: "/users",
+  method: "GET",
   signal: controller.signal,
 });
 
@@ -152,7 +157,7 @@ await promise;
 模型：
 
 ```ts
-const gzFetch = createGzFetch({
+configureGzFetch({
   middlewares: [
     {
       onRequest(config) {
@@ -160,7 +165,7 @@ const gzFetch = createGzFetch({
           ...config,
           headers: {
             ...config.headers,
-            'X-Trace-ID': crypto.randomUUID(),
+            "X-Trace-ID": crypto.randomUUID(),
           },
         };
       },
@@ -176,16 +181,38 @@ const gzFetch = createGzFetch({
 });
 ```
 
+## 独立请求实例
+
+普通业务模块禁止反复调用 `createGzFetch`。它只用于确实需要独立请求实例的高级
+场景，例如多后端服务、独立 `baseURL`、独立 Token 或独立中间件链：
+
+```ts
+import { createGzFetch } from "@lishenchan/gz-pc/fetch";
+
+const reportingFetch = createGzFetch({
+  baseURL: "/reporting-api",
+  getToken: () => reportingToken,
+});
+
+const report = await reportingFetch<ReportResult>({
+  url: "/reports/latest",
+  method: "GET",
+});
+```
+
+默认 `gzFetch` 和独立实例都复用同一套请求核心、错误处理、Token 注入和中间件
+实现。
+
 ## Blob
 
 gz-fetch 只返回 Blob，不创建下载链接、不解析文件名：
 
 ```ts
 const file = await gzFetch<Blob, ExportParams>({
-  url: '/export',
-  method: 'POST',
+  url: "/export",
+  method: "POST",
   data: params,
-  responseType: 'blob',
+  responseType: "blob",
 });
 ```
 
@@ -197,15 +224,15 @@ import {
   useDebounceFn,
   usePagination,
   useRequest,
-} from '@lishenchan/gz-pc/hooks';
+} from "@lishenchan/gz-pc/hooks";
 ```
 
 `gz-pc/hooks` 通过 `export * from 'ahooks'` 完整透传 ahooks 的公开 API，作为团队
 统一的 Hooks 使用入口。后续自定义 Hook 也从同一入口导出：
 
 ```ts
-export * from 'ahooks';
-export * from './use-table-height';
+export * from "ahooks";
+export * from "./use-table-height";
 ```
 
 新增自定义 Hook 时不得与 ahooks 已有导出重名。
@@ -213,14 +240,34 @@ export * from './use-table-height';
 ## formatDate
 
 ```ts
-import { formatDate } from '@lishenchan/gz-pc/utils';
+import { formatDate } from "@lishenchan/gz-pc/utils";
 
 formatDate(new Date()); // YYYY-MM-DD HH:mm:ss
-formatDate(Date.now(), 'YYYY-MM-DD');
+formatDate(Date.now(), "YYYY-MM-DD");
 ```
 
 支持 `string | number | Date | null | undefined`。`null`、`undefined`、空字符串和
 无效日期统一返回 `--`。该入口不依赖 React、ahooks、Axios 或 gg-ui。
+
+## Query 参数
+
+```ts
+import { objectToQuery, queryToObject } from "@lishenchan/gz-pc/utils";
+
+queryToObject("https://example.com/list?page=1&tag=a&tag=b");
+// { page: '1', tag: ['a', 'b'] }
+
+objectToQuery({
+  page: 1,
+  keyword: "audit log",
+  tag: ["a", "b"],
+});
+// page=1&keyword=audit+log&tag=a&tag=b
+```
+
+`queryToObject` 支持完整 URL、带 `?` 的 query 和纯 query 字符串；重复参数返回
+字符串数组。`objectToQuery` 返回不带前导 `?` 的字符串，跳过 `undefined`，
+将 `null` 转为空值，并将数组序列化为重复参数。
 
 ## MSW Mock
 
@@ -228,8 +275,8 @@ formatDate(Date.now(), 'YYYY-MM-DD');
 
 ```ts
 async function bootstrap(): Promise<void> {
-  if (import.meta.env.VITE_USE_MOCK === 'true') {
-    const { startMock } = await import('./mock/browser');
+  if (import.meta.env.VITE_USE_MOCK === "true") {
+    const { startMock } = await import("./mock/browser");
     await startMock();
   }
 
@@ -241,7 +288,7 @@ void bootstrap();
 
 ```ts
 worker.start({
-  onUnhandledRequest: 'bypass',
+  onUnhandledRequest: "bypass",
 });
 ```
 
@@ -268,8 +315,20 @@ npm install ../gz-pc/lishenchan-gz-pc-0.1.0.tgz
 
 ## 提交规范
 
-项目使用 Commitlint、Husky 和 Conventional Commits。安装依赖时 `prepare`
-脚本会初始化 Husky，`.husky/commit-msg` 会使用本地 Commitlint 校验提交信息：
+项目使用 Husky、lint-staged、Commitlint 和 Conventional Commits。安装依赖时
+`prepare` 脚本会初始化 Husky。
+
+`pre-commit` 在提交前只检查 Git 暂存区中的文件：
+
+- JavaScript、JSX、TypeScript、TSX：依次执行 `eslint --fix` 和
+  `prettier --write`
+- JSON、Markdown、YAML、CSS、Less：执行 `prettier --write`
+
+可以自动修复的问题会写回暂存文件；仍存在的 ESLint 错误会阻止提交。lint-staged
+只负责提交前的快速增量检查，不替代完整的 `lint`、`typecheck`、`test` 和
+`build`。
+
+`commit-msg` 使用 Commitlint 校验提交信息：
 
 ```text
 feat: add request client
