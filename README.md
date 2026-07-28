@@ -1,0 +1,285 @@
+# @lishenchan/gz-pc
+
+面向 GZ 前端项目的请求、Hooks 和轻量工具函数包。各子路径独立构建；只使用
+`utils` 时不会加载 Axios、React、ahooks 或 gg-ui。
+
+## 安装
+
+```bash
+npm install @lishenchan/gz-pc react @chenhui996/gg-ui
+```
+
+宿主项目需要提供以下 peer dependencies：
+
+- React 18 或 19
+- `@chenhui996/gg-ui` 0.1
+
+Axios 和 ahooks 是 gz-pc 的普通 dependencies，安装 gz-pc 时会自动安装，宿主
+无需手工添加。React 和 gg-ui 不会打入本包产物。
+
+本包刻意不提供聚合根入口，请始终从 `/fetch`、`/hooks` 或 `/utils` 子路径导入，
+避免加载无关模块。
+
+## 请求协议
+
+gz-fetch **只有在 HTTP Status 为 200 时才认为请求成功**。201、204 以及其他
+所有状态都会进入统一错误处理。
+
+成功时直接返回后端原始的 `response.data`，不会返回 `AxiosResponse`，也不会：
+
+- 判断业务 `code`
+- 自动解包 `data`
+- 转换分页、字段、日期或任何服务端数据
+
+```ts
+import { createGzFetch } from '@lishenchan/gz-pc/fetch';
+
+const gzFetch = createGzFetch({
+  baseURL: '/api',
+  timeout: 15_000,
+  getToken: () => runtimeToken,
+  showErrorMessage: true,
+});
+
+interface ListResult {
+  records: Array<{ id: string }>;
+  total: number;
+}
+
+const result = await gzFetch<ListResult>({
+  url: '/users',
+  method: 'GET',
+  params: {
+    page: 1,
+    pageSize: 20,
+  },
+});
+result.records;
+result.total;
+
+interface CreateUserParams {
+  name: string;
+}
+
+await gzFetch<ListResult, CreateUserParams>({
+  url: '/users',
+  method: 'POST',
+  data: {
+    name: 'Alice',
+  },
+});
+```
+
+gz-pc 统一使用配置对象式请求调用。业务代码不得混用 `gzFetch(config)` 与
+`gzFetch.get/post/put/delete` 两种风格。快捷方法仅作为内部兼容层保留，不作为
+业务开发规范。
+
+## Token
+
+`getToken` 会在每次请求前动态执行。gz-fetch 不读取 Props、React Context 或
+`localStorage`。
+
+默认请求头为 `Authorization: Bearer <token>`：
+
+```ts
+const gzFetch = createGzFetch({
+  getToken: async () => tokenStore.get(),
+});
+
+await gzFetch<PublicConfig>({
+  url: '/public/config',
+  method: 'GET',
+  skipAuth: true,
+});
+```
+
+也可以修改 Header 名称和格式：
+
+```ts
+const gzFetch = createGzFetch({
+  getToken: () => token,
+  auth: {
+    headerName: 'X-Token',
+    formatToken: (value) => `Token ${value}`,
+  },
+});
+```
+
+## 错误提示
+
+HTTP 非 200 时仅尝试读取响应体的 `msg`。没有有效 `msg` 时使用默认文案，最终
+抛出 `GzFetchError`。
+
+错误类型包括：
+
+- `HTTP_ERROR`
+- `NETWORK_ERROR`
+- `TIMEOUT_ERROR`
+- `CANCELED_ERROR`
+- `UNKNOWN_ERROR`
+
+错误 Message 默认开启，优先级为“单请求配置 > 实例配置 > 默认值 true”：
+
+```ts
+const gzFetch = createGzFetch({ showErrorMessage: true });
+
+await gzFetch<void, SaveParams>({
+  url: '/save',
+  method: 'POST',
+  data,
+  showErrorMessage: false,
+});
+```
+
+取消请求会转换成 `CANCELED_ERROR`，且默认不调用 `message.error`：
+
+```ts
+const controller = new AbortController();
+
+const promise = gzFetch<UserDetail>({
+  url: '/users',
+  method: 'GET',
+  signal: controller.signal,
+});
+
+controller.abort();
+await promise;
+```
+
+## 中间件
+
+中间件的 `onRequest`、`onResponse` 和 `onError` 都按注册顺序执行，不采用洋葱
+模型：
+
+```ts
+const gzFetch = createGzFetch({
+  middlewares: [
+    {
+      onRequest(config) {
+        return {
+          ...config,
+          headers: {
+            ...config.headers,
+            'X-Trace-ID': crypto.randomUUID(),
+          },
+        };
+      },
+      onResponse(data, context) {
+        console.debug(context.status);
+        return data;
+      },
+      onError(error) {
+        console.error(error.type);
+      },
+    },
+  ],
+});
+```
+
+## Blob
+
+gz-fetch 只返回 Blob，不创建下载链接、不解析文件名：
+
+```ts
+const file = await gzFetch<Blob, ExportParams>({
+  url: '/export',
+  method: 'POST',
+  data: params,
+  responseType: 'blob',
+});
+```
+
+## Hooks
+
+```ts
+import {
+  useDebounce,
+  useDebounceFn,
+  usePagination,
+  useRequest,
+} from '@lishenchan/gz-pc/hooks';
+```
+
+`gz-pc/hooks` 通过 `export * from 'ahooks'` 完整透传 ahooks 的公开 API，作为团队
+统一的 Hooks 使用入口。后续自定义 Hook 也从同一入口导出：
+
+```ts
+export * from 'ahooks';
+export * from './use-table-height';
+```
+
+新增自定义 Hook 时不得与 ahooks 已有导出重名。
+
+## formatDate
+
+```ts
+import { formatDate } from '@lishenchan/gz-pc/utils';
+
+formatDate(new Date()); // YYYY-MM-DD HH:mm:ss
+formatDate(Date.now(), 'YYYY-MM-DD');
+```
+
+支持 `string | number | Date | null | undefined`。`null`、`undefined`、空字符串和
+无效日期统一返回 `--`。该入口不依赖 React、ahooks、Axios 或 gg-ui。
+
+## MSW Mock
+
+完整接入样例位于 [`examples/msw`](./examples/msw)。核心启动顺序如下：
+
+```ts
+async function bootstrap(): Promise<void> {
+  if (import.meta.env.VITE_USE_MOCK === 'true') {
+    const { startMock } = await import('./mock/browser');
+    await startMock();
+  }
+
+  renderApp();
+}
+
+void bootstrap();
+```
+
+```ts
+worker.start({
+  onUnhandledRequest: 'bypass',
+});
+```
+
+必须等待 `worker.start()` 完成后再渲染应用，避免首次请求漏拦截。具体 Handler
+和 Mock 数据由业务项目维护，gz-pc 不提供业务 Mock。
+
+## 本地接入
+
+先在本仓库构建并生成 tarball：
+
+```bash
+npm run build
+npm pack
+```
+
+然后在业务项目安装生成的 `.tgz`：
+
+```bash
+npm install ../gz-pc/lishenchan-gz-pc-0.1.0.tgz
+```
+
+也可以在联调期间使用业务项目支持的 workspace 或本地 `file:` 依赖。发布前建议
+优先用 tarball 验证，因为它与 npm 实际安装内容最接近。
+
+## 提交规范
+
+项目使用 Commitlint、Husky 和 Conventional Commits。安装依赖时 `prepare`
+脚本会初始化 Husky，`.husky/commit-msg` 会使用本地 Commitlint 校验提交信息：
+
+```text
+feat: add request client
+fix: handle canceled request
+```
+
+缺少合法 type、subject 或其他不符合 Conventional Commits 的提交信息会被拒绝。
+
+## 第一版边界
+
+第一版不包含 Token 自动刷新、自动重试、缓存、请求去重、并发控制、业务 code
+判断、`data` 解包、分页/日期转换、错误上报、自动文件下载、内置业务 Mock、
+React Context、Zustand 或复杂洋葱中间件。
