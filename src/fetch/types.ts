@@ -1,6 +1,4 @@
-import type {
-  AxiosHeaders,
-} from 'axios';
+import type { AxiosHeaders } from 'axios';
 
 import type { GzFetchError } from './error';
 
@@ -8,8 +6,7 @@ export type GzRequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 export type GzResponseType = 'json' | 'blob' | 'text';
 export type GzRequestParams = Record<string, unknown>;
 export type GzRequestHeaders =
-  | Record<string, string | number | boolean | null>
-  | AxiosHeaders;
+  Record<string, string | number | boolean | null> | AxiosHeaders;
 
 export interface GzRequestConfig<TRequestData = unknown> {
   url: string;
@@ -24,8 +21,10 @@ export interface GzRequestConfig<TRequestData = unknown> {
   signal?: AbortSignal;
 }
 
-export interface GzInternalRequestConfig
-  extends Omit<GzRequestConfig<unknown>, 'headers'> {
+export interface GzInternalRequestConfig extends Omit<
+  GzRequestConfig<unknown>,
+  'headers'
+> {
   headers?: GzRequestHeaders;
   data?: unknown;
 }
@@ -49,10 +48,7 @@ export interface GzFetchMiddleware {
   onRequest?: (
     config: GzInternalRequestConfig,
   ) => GzInternalRequestConfig | Promise<GzInternalRequestConfig>;
-  onResponse?: <T>(
-    data: T,
-    context: GzResponseContext,
-  ) => T | Promise<T>;
+  onResponse?: <T>(data: T, context: GzResponseContext) => T | Promise<T>;
   onError?: (
     error: GzFetchError,
     context: GzErrorContext,

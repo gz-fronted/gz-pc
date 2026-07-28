@@ -10,16 +10,16 @@ function isQueryPrimitiveArray(
 }
 
 function extractQuery(value: string): string {
-  const questionMarkIndex = value.indexOf("?");
+  const questionMarkIndex = value.indexOf('?');
   if (questionMarkIndex >= 0) {
-    return value.slice(questionMarkIndex + 1).split("#", 1)[0] ?? "";
+    return value.slice(questionMarkIndex + 1).split('#', 1)[0] ?? '';
   }
 
-  if (/^[a-z][a-z\d+.-]*:\/\//i.test(value) || value.startsWith("/")) {
-    return "";
+  if (/^[a-z][a-z\d+.-]*:\/\//i.test(value) || value.startsWith('/')) {
+    return '';
   }
 
-  return value.replace(/^\?/, "").split("#", 1)[0] ?? "";
+  return value.replace(/^\?/, '').split('#', 1)[0] ?? '';
 }
 
 export function queryToObject(value: string): QueryObject {
@@ -45,7 +45,7 @@ export function objectToQuery(value: QueryInput): string {
 
   const appendValue = (key: string, item: QueryPrimitive): void => {
     if (item !== undefined) {
-      searchParams.append(key, item === null ? "" : String(item));
+      searchParams.append(key, item === null ? '' : String(item));
     }
   };
 

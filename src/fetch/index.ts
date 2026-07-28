@@ -1,7 +1,7 @@
-export { createGzFetch } from "./client";
-export { configureGzFetch, gzFetch } from "./default-client";
-export { GzFetchError, getResponseMessage, toGzFetchError } from "./error";
-export type { GzFetchErrorOptions, GzFetchErrorType } from "./error";
+export { createGzFetch } from './client';
+export { configureGzFetch, gzFetch } from './default-client';
+export { GzFetchError, getResponseMessage, toGzFetchError } from './error';
+export type { GzFetchErrorOptions, GzFetchErrorType } from './error';
 export type {
   CreateGzFetchOptions,
   GzErrorContext,
@@ -17,4 +17,4 @@ export type {
   GzRequestParams,
   GzResponseType,
   GzResponseContext,
-} from "./types";
+} from './types';

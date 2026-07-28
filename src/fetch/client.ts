@@ -1,9 +1,6 @@
 import { message } from '@chenhui996/gg-ui';
 import axios, { AxiosHeaders } from 'axios';
-import type {
-  AxiosRequestConfig,
-  AxiosResponse,
-} from 'axios';
+import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 import { toGzFetchError } from './error';
 import {
@@ -23,7 +20,9 @@ import type {
 const DEFAULT_TIMEOUT = 15_000;
 const DEFAULT_AUTH_HEADER = 'Authorization';
 
-function toHeaderRecord(headers: AxiosResponse['headers']): Record<string, string> {
+function toHeaderRecord(
+  headers: AxiosResponse['headers'],
+): Record<string, string> {
   const result: Record<string, string> = {};
 
   for (const [name, value] of Object.entries(headers)) {
@@ -99,11 +98,7 @@ export function createGzFetch(
         headers: toHeaderRecord(response.headers),
       };
 
-      return await runResponseMiddlewares(
-        response.data,
-        context,
-        middlewares,
-      );
+      return await runResponseMiddlewares(response.data, context, middlewares);
     } catch (originalError) {
       const error = toGzFetchError(originalError);
       await runErrorMiddlewares(error, { config: currentConfig }, middlewares);

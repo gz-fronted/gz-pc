@@ -19,7 +19,8 @@ export function formatDate(
     return INVALID_DATE_PLACEHOLDER;
   }
 
-  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  const date =
+    value instanceof Date ? new Date(value.getTime()) : new Date(value);
   if (Number.isNaN(date.getTime())) {
     return INVALID_DATE_PLACEHOLDER;
   }

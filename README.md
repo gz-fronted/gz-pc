@@ -32,11 +32,11 @@ gz-fetch **只有在 HTTP Status 为 200 时才认为请求成功**。201、204 
 - 转换分页、字段、日期或任何服务端数据
 
 ```ts
-import { configureGzFetch, gzFetch } from "@lishenchan/gz-pc/fetch";
+import { configureGzFetch, gzFetch } from '@lishenchan/gz-pc/fetch';
 
 // 应用初始化入口只调用一次；微前端重新挂载时可以覆盖上一次配置。
 configureGzFetch({
-  baseURL: "/api",
+  baseURL: '/api',
   timeout: 15_000,
   getToken: () => runtimeToken,
   showErrorMessage: true,
@@ -48,8 +48,8 @@ interface ListResult {
 }
 
 const result = await gzFetch<ListResult>({
-  url: "/users",
-  method: "GET",
+  url: '/users',
+  method: 'GET',
   params: {
     page: 1,
     pageSize: 20,
@@ -63,10 +63,10 @@ interface CreateUserParams {
 }
 
 await gzFetch<ListResult, CreateUserParams>({
-  url: "/users",
-  method: "POST",
+  url: '/users',
+  method: 'POST',
   data: {
-    name: "Alice",
+    name: 'Alice',
   },
 });
 ```
@@ -92,8 +92,8 @@ configureGzFetch({
 });
 
 await gzFetch<PublicConfig>({
-  url: "/public/config",
-  method: "GET",
+  url: '/public/config',
+  method: 'GET',
   skipAuth: true,
 });
 ```
@@ -104,7 +104,7 @@ await gzFetch<PublicConfig>({
 configureGzFetch({
   getToken: () => token,
   auth: {
-    headerName: "X-Token",
+    headerName: 'X-Token',
     formatToken: (value) => `Token ${value}`,
   },
 });
@@ -129,8 +129,8 @@ HTTP 非 200 时仅尝试读取响应体的 `msg`。没有有效 `msg` 时使用
 configureGzFetch({ showErrorMessage: true });
 
 await gzFetch<void, SaveParams>({
-  url: "/save",
-  method: "POST",
+  url: '/save',
+  method: 'POST',
   data,
   showErrorMessage: false,
 });
@@ -142,8 +142,8 @@ await gzFetch<void, SaveParams>({
 const controller = new AbortController();
 
 const promise = gzFetch<UserDetail>({
-  url: "/users",
-  method: "GET",
+  url: '/users',
+  method: 'GET',
   signal: controller.signal,
 });
 
@@ -165,7 +165,7 @@ configureGzFetch({
           ...config,
           headers: {
             ...config.headers,
-            "X-Trace-ID": crypto.randomUUID(),
+            'X-Trace-ID': crypto.randomUUID(),
           },
         };
       },
@@ -187,16 +187,16 @@ configureGzFetch({
 场景，例如多后端服务、独立 `baseURL`、独立 Token 或独立中间件链：
 
 ```ts
-import { createGzFetch } from "@lishenchan/gz-pc/fetch";
+import { createGzFetch } from '@lishenchan/gz-pc/fetch';
 
 const reportingFetch = createGzFetch({
-  baseURL: "/reporting-api",
+  baseURL: '/reporting-api',
   getToken: () => reportingToken,
 });
 
 const report = await reportingFetch<ReportResult>({
-  url: "/reports/latest",
-  method: "GET",
+  url: '/reports/latest',
+  method: 'GET',
 });
 ```
 
@@ -209,10 +209,10 @@ gz-fetch 只返回 Blob，不创建下载链接、不解析文件名：
 
 ```ts
 const file = await gzFetch<Blob, ExportParams>({
-  url: "/export",
-  method: "POST",
+  url: '/export',
+  method: 'POST',
   data: params,
-  responseType: "blob",
+  responseType: 'blob',
 });
 ```
 
@@ -224,15 +224,15 @@ import {
   useDebounceFn,
   usePagination,
   useRequest,
-} from "@lishenchan/gz-pc/hooks";
+} from '@lishenchan/gz-pc/hooks';
 ```
 
 `gz-pc/hooks` 通过 `export * from 'ahooks'` 完整透传 ahooks 的公开 API，作为团队
 统一的 Hooks 使用入口。后续自定义 Hook 也从同一入口导出：
 
 ```ts
-export * from "ahooks";
-export * from "./use-table-height";
+export * from 'ahooks';
+export * from './use-table-height';
 ```
 
 新增自定义 Hook 时不得与 ahooks 已有导出重名。
@@ -240,10 +240,10 @@ export * from "./use-table-height";
 ## formatDate
 
 ```ts
-import { formatDate } from "@lishenchan/gz-pc/utils";
+import { formatDate } from '@lishenchan/gz-pc/utils';
 
 formatDate(new Date()); // YYYY-MM-DD HH:mm:ss
-formatDate(Date.now(), "YYYY-MM-DD");
+formatDate(Date.now(), 'YYYY-MM-DD');
 ```
 
 支持 `string | number | Date | null | undefined`。`null`、`undefined`、空字符串和
@@ -252,15 +252,15 @@ formatDate(Date.now(), "YYYY-MM-DD");
 ## Query 参数
 
 ```ts
-import { objectToQuery, queryToObject } from "@lishenchan/gz-pc/utils";
+import { objectToQuery, queryToObject } from '@lishenchan/gz-pc/utils';
 
-queryToObject("https://example.com/list?page=1&tag=a&tag=b");
+queryToObject('https://example.com/list?page=1&tag=a&tag=b');
 // { page: '1', tag: ['a', 'b'] }
 
 objectToQuery({
   page: 1,
-  keyword: "audit log",
-  tag: ["a", "b"],
+  keyword: 'audit log',
+  tag: ['a', 'b'],
 });
 // page=1&keyword=audit+log&tag=a&tag=b
 ```
@@ -275,8 +275,8 @@ objectToQuery({
 
 ```ts
 async function bootstrap(): Promise<void> {
-  if (import.meta.env.VITE_USE_MOCK === "true") {
-    const { startMock } = await import("./mock/browser");
+  if (import.meta.env.VITE_USE_MOCK === 'true') {
+    const { startMock } = await import('./mock/browser');
     await startMock();
   }
 
@@ -288,7 +288,7 @@ void bootstrap();
 
 ```ts
 worker.start({
-  onUnhandledRequest: "bypass",
+  onUnhandledRequest: 'bypass',
 });
 ```
 
@@ -327,6 +327,9 @@ npm install ../gz-pc/lishenchan-gz-pc-0.1.0.tgz
 可以自动修复的问题会写回暂存文件；仍存在的 ESLint 错误会阻止提交。lint-staged
 只负责提交前的快速增量检查，不替代完整的 `lint`、`typecheck`、`test` 和
 `build`。
+
+Prettier 对 JavaScript、TypeScript 和 JSX 统一使用单引号；JSON 按标准继续使用
+双引号。
 
 `commit-msg` 使用 Commitlint 校验提交信息：
 

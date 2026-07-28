@@ -1,12 +1,12 @@
-import { createGzFetch } from "./client";
+import { createGzFetch } from './client';
 import type {
   CreateGzFetchOptions,
   GzFetchClient,
   GzRequestConfig,
-} from "./types";
+} from './types';
 
 const NOT_CONFIGURED_MESSAGE =
-  "gzFetch 尚未配置，请先在应用初始化时调用 configureGzFetch。";
+  'gzFetch 尚未配置，请先在应用初始化时调用 configureGzFetch。';
 
 let defaultClient: GzFetchClient | undefined;
 
