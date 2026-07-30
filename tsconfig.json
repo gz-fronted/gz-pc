@@ -1,24 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "target": "ES2018",
+    "lib": ["ES2018", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@lishenchan/gz-pc/fetch": [
-        "src/fetch/index.ts"
-      ],
-      "@lishenchan/gz-pc/hooks": [
-        "src/hooks/index.ts"
-      ],
-      "@lishenchan/gz-pc/utils": [
-        "src/utils/index.ts"
-      ]
+      "@lishenchan/gz-pc/fetch": ["src/fetch/index.ts"],
+      "@lishenchan/gz-pc/hooks": ["src/hooks/index.ts"],
+      "@lishenchan/gz-pc/utils": ["src/utils/index.ts"]
     },
     "strict": true,
     "noUncheckedIndexedAccess": true,
@@ -27,14 +17,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "types": [
-      "node",
-      "vitest/globals"
-    ]
+    "types": ["node", "vitest/globals"]
   },
-  "include": [
-    "src",
-    "tests",
-    "*.config.ts"
-  ]
+  "include": ["src", "tests", "*.config.ts"]
 }

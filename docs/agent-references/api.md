@@ -15,13 +15,22 @@ configureGzFetch({
 
 ```ts
 gzFetch<ResponseData>({
-  url: "/api/path",
-  method: "POST",
-  data: params,
+  url: '/api/path',
+  method: 'POST',
+  params,
 });
 ```
 
 请求地址字段必须使用 `url`，不得使用 `api`。
+
+请求入参字段统一使用 `params`，不得在业务请求配置中使用 `data`。请求核心根据
+HTTP Method 进行唯一映射：
+
+- GET、DELETE 转为 URL Query。
+- POST、PUT 转为 Request Body。
+
+业务代码不需要理解 Axios 的 `params` 与 `data` 差异，也不得自行维护另一套
+映射规则。
 
 `configureGzFetch` 只能在应用初始化层调用。普通业务模块不得反复配置默认实例，
 也不得自行创建请求实例。

@@ -65,7 +65,7 @@ interface CreateUserParams {
 await gzFetch<ListResult, CreateUserParams>({
   url: '/users',
   method: 'POST',
-  data: {
+  params: {
     name: 'Alice',
   },
 });
@@ -78,6 +78,90 @@ await gzFetch<ListResult, CreateUserParams>({
 
 如果在 `configureGzFetch` 之前调用 `gzFetch`，会明确抛出错误，不会静默使用
 空配置，也不会读取 `localStorage`。
+
+### 类型签名
+
+`gzFetch` 的第一个泛型是响应数据类型，第二个泛型是请求参数类型：
+
+```ts
+function gzFetch<TResponse, TRequestParams = unknown>(
+  config: GzRequestConfig<TRequestParams>,
+): Promise<TResponse>;
+```
+
+成功时直接返回 `response.data`，因此调用结果类型是 `TResponse`，不是
+`AxiosResponse<TResponse>`。
+
+### 单次请求配置
+
+| 字段               | 类型                                   | 必填 | 说明                                       |
+| ------------------ | -------------------------------------- | ---- | ------------------------------------------ |
+| `url`              | `string`                               | 是   | 请求地址；配置了 `baseURL` 时会与其组合    |
+| `method`           | `'GET' \| 'POST' \| 'PUT' \| 'DELETE'` | 是   | 请求方法，统一使用大写                     |
+| `params`           | `TRequestParams`                       | 否   | 统一请求入参，由第二个泛型约束             |
+| `headers`          | `Record<string, string>`               | 否   | 本次请求附加的请求头                       |
+| `timeout`          | `number`                               | 否   | 本次请求超时时间，单位毫秒；优先于实例配置 |
+| `showErrorMessage` | `boolean`                              | 否   | 是否调用 gg-ui 的 `message.error`          |
+| `skipAuth`         | `boolean`                              | 否   | 为 `true` 时跳过 Token 注入                |
+| `responseType`     | `'json' \| 'blob' \| 'text'`           | 否   | 响应数据类型，默认 `json`                  |
+| `signal`           | `AbortSignal`                          | 否   | 取消请求的标准 AbortSignal                 |
+
+请求入参字段统一使用 `params`，业务代码不需要区分 Axios 的 `params` 和 `data`：
+
+- GET、DELETE：`params` 转为 URL Query。
+- POST、PUT：`params` 转为 Request Body。
+
+业务请求配置不支持 `data`，也不得混用 `params` 和 `data`。
+
+完整示例：
+
+```ts
+interface SaveParams {
+  id: string;
+  name: string;
+}
+
+interface SaveResult {
+  success: boolean;
+}
+
+const controller = new AbortController();
+
+const result = await gzFetch<SaveResult, SaveParams>({
+  url: '/user/save',
+  method: 'POST',
+  params: {
+    id: '1001',
+    name: '张三',
+  },
+  headers: {
+    'X-Request-Source': 'gz-pc',
+  },
+  timeout: 10_000,
+  showErrorMessage: true,
+  skipAuth: false,
+  responseType: 'json',
+  signal: controller.signal,
+});
+```
+
+### 应用初始化配置
+
+`configureGzFetch` 只在应用初始化层调用。它接收以下配置：
+
+| 字段               | 类型                                                        | 默认值            | 说明                       |
+| ------------------ | ----------------------------------------------------------- | ----------------- | -------------------------- |
+| `baseURL`          | `string`                                                    | 无                | 所有业务请求的基础地址     |
+| `timeout`          | `number`                                                    | `15000`           | 默认请求超时时间，单位毫秒 |
+| `getToken`         | `() => string \| undefined \| Promise<string \| undefined>` | 无                | 每次请求前动态获取 Token   |
+| `showErrorMessage` | `boolean`                                                   | `true`            | 实例级错误提示开关         |
+| `auth.headerName`  | `string`                                                    | `Authorization`   | Token 请求头名称           |
+| `auth.formatToken` | `(token: string) => string`                                 | `Bearer ${token}` | Token 格式化函数           |
+| `middlewares`      | `readonly GzFetchMiddleware[]`                              | `[]`              | 请求、响应和错误中间件     |
+
+当前稳定 API 没有开放 Axios 的 `withCredentials`、`paramsSerializer`、
+`onUploadProgress`、`validateStatus` 等配置，也暂不支持 `PATCH`。业务代码只应传入
+上表列出的字段；如果后续确有通用场景，再通过 gz-pc 统一扩展类型和请求核心。
 
 ## Token
 
@@ -131,7 +215,7 @@ configureGzFetch({ showErrorMessage: true });
 await gzFetch<void, SaveParams>({
   url: '/save',
   method: 'POST',
-  data,
+  params,
   showErrorMessage: false,
 });
 ```
@@ -211,7 +295,7 @@ gz-fetch 只返回 Blob，不创建下载链接、不解析文件名：
 const file = await gzFetch<Blob, ExportParams>({
   url: '/export',
   method: 'POST',
-  data: params,
+  params,
   responseType: 'blob',
 });
 ```

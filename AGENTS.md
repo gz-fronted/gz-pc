@@ -4,4 +4,5 @@
 - 业务请求默认使用 `gzFetch`；`configureGzFetch` 只在应用初始化层调用。
 - 普通业务模块不得自行调用 `createGzFetch`；它仅用于多服务等需要独立实例的特殊场景。
 - 请求地址字段必须命名为 `url`，不得使用 `api`。
+- 请求入参字段统一使用 `params`：GET/DELETE 转 URL Query，POST/PUT 转 Request Body；业务代码不得使用 `data`。
 - 详细请求规范见 `docs/agent-references/api.md`。

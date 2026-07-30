@@ -7,12 +7,16 @@ await build({
     'utils/index': '././src/utils/index.ts',
   },
   format: ['esm', 'cjs'],
+  target: 'es2018',
   dts: true,
   clean: true,
-  sourcemap: true,
+  sourcemap: false,
   splitting: false,
   treeshake: true,
   external: ['react', 'ahooks', 'axios', '@chenhui996/gg-ui'],
+  esbuildOptions(options) {
+    options.charset = 'utf8';
+  },
   outExtension({ format }) {
     return {
       js: format === 'cjs' ? '.cjs' : '.js',

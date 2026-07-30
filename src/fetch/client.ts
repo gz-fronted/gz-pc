@@ -49,8 +49,8 @@ export function createGzFetch(
     validateStatus: (status) => status === 200,
   });
 
-  async function request<TResponse, TRequestData = unknown>(
-    initialConfig: GzRequestConfig<TRequestData>,
+  async function request<TResponse, TRequestParams = unknown>(
+    initialConfig: GzRequestConfig<TRequestParams>,
   ): Promise<TResponse> {
     let currentConfig: GzInternalRequestConfig = initialConfig;
 
@@ -68,16 +68,18 @@ export function createGzFetch(
         middlewares,
       );
 
+      const usesRequestBody =
+        currentConfig.method === 'POST' || currentConfig.method === 'PUT';
       const axiosConfig: AxiosRequestConfig = {
         url: currentConfig.url,
         method: currentConfig.method,
-        ...(currentConfig.data === undefined
+        ...(!usesRequestBody || currentConfig.params === undefined
           ? {}
-          : { data: currentConfig.data }),
+          : { data: currentConfig.params }),
         ...(currentConfig.headers === undefined
           ? {}
           : { headers: currentConfig.headers }),
-        ...(currentConfig.params === undefined
+        ...(usesRequestBody || currentConfig.params === undefined
           ? {}
           : { params: currentConfig.params }),
         ...(currentConfig.timeout === undefined
@@ -113,35 +115,35 @@ export function createGzFetch(
     }
   }
 
-  const gzFetch = (<TResponse, TRequestData = unknown>(
-    config: GzRequestConfig<TRequestData>,
-  ) => request<TResponse, TRequestData>(config)) as GzFetchClient;
+  const gzFetch = (<TResponse, TRequestParams = unknown>(
+    config: GzRequestConfig<TRequestParams>,
+  ) => request<TResponse, TRequestParams>(config)) as GzFetchClient;
 
   gzFetch.get = <T>(url: string, config: GzRequestOptions = {}) =>
     gzFetch<T>({ ...config, url, method: 'GET' });
 
-  gzFetch.post = <T, TBody = unknown>(
+  gzFetch.post = <T, TRequestParams = unknown>(
     url: string,
-    data?: TBody,
-    config: GzRequestOptions = {},
+    params?: TRequestParams,
+    config: Omit<GzRequestOptions, 'params'> = {},
   ) =>
-    gzFetch<T, TBody>({
+    gzFetch<T, TRequestParams>({
       ...config,
       url,
       method: 'POST',
-      ...(data === undefined ? {} : { data }),
+      ...(params === undefined ? {} : { params }),
     });
 
-  gzFetch.put = <T, TBody = unknown>(
+  gzFetch.put = <T, TRequestParams = unknown>(
     url: string,
-    data?: TBody,
-    config: GzRequestOptions = {},
+    params?: TRequestParams,
+    config: Omit<GzRequestOptions, 'params'> = {},
   ) =>
-    gzFetch<T, TBody>({
+    gzFetch<T, TRequestParams>({
       ...config,
       url,
       method: 'PUT',
-      ...(data === undefined ? {} : { data }),
+      ...(params === undefined ? {} : { params }),
     });
 
   gzFetch.delete = <T>(url: string, config: GzRequestOptions = {}) =>

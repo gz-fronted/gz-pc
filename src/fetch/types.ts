@@ -8,11 +8,10 @@ export type GzRequestParams = Record<string, unknown>;
 export type GzRequestHeaders =
   Record<string, string | number | boolean | null> | AxiosHeaders;
 
-export interface GzRequestConfig<TRequestData = unknown> {
+export interface GzRequestConfig<TRequestParams = unknown> {
   url: string;
   method: GzRequestMethod;
-  params?: GzRequestParams;
-  data?: TRequestData;
+  params?: TRequestParams;
   headers?: Record<string, string>;
   timeout?: number;
   showErrorMessage?: boolean;
@@ -26,12 +25,11 @@ export interface GzInternalRequestConfig extends Omit<
   'headers'
 > {
   headers?: GzRequestHeaders;
-  data?: unknown;
 }
 
-export type GzRequestOptions = Omit<
-  GzRequestConfig<never>,
-  'url' | 'method' | 'data'
+export type GzRequestOptions<TRequestParams = unknown> = Omit<
+  GzRequestConfig<TRequestParams>,
+  'url' | 'method'
 >;
 
 export interface GzResponseContext {
@@ -70,19 +68,19 @@ export interface CreateGzFetchOptions {
 }
 
 export interface GzFetchClient {
-  <TResponse, TRequestData = unknown>(
-    config: GzRequestConfig<TRequestData>,
+  <TResponse, TRequestParams = unknown>(
+    config: GzRequestConfig<TRequestParams>,
   ): Promise<TResponse>;
   get<T>(url: string, config?: GzRequestOptions): Promise<T>;
-  post<T, TBody = unknown>(
+  post<T, TRequestParams = unknown>(
     url: string,
-    data?: TBody,
-    config?: GzRequestOptions,
+    params?: TRequestParams,
+    config?: Omit<GzRequestOptions, 'params'>,
   ): Promise<T>;
-  put<T, TBody = unknown>(
+  put<T, TRequestParams = unknown>(
     url: string,
-    data?: TBody,
-    config?: GzRequestOptions,
+    params?: TRequestParams,
+    config?: Omit<GzRequestOptions, 'params'>,
   ): Promise<T>;
   delete<T>(url: string, config?: GzRequestOptions): Promise<T>;
 }

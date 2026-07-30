@@ -184,37 +184,68 @@ describe('createGzFetch', () => {
     expect(result).toBe(body);
   });
 
-  it('forwards params for GET and typed data for POST', async () => {
+  it('maps params to query for GET and to body for POST', async () => {
     interface CreateUserParams {
       name: string;
     }
 
     mocks.request.mockResolvedValue({ data: 'ok', status: 200, headers: {} });
     const gzFetch = createGzFetch();
-    const params = { userId: 'user-1' };
-    const data: CreateUserParams = { name: 'Alice' };
+    const getParams = { userId: 'user-1' };
+    const postParams: CreateUserParams = { name: 'Alice' };
 
     await gzFetch<string>({
       url: '/user/detail',
       method: 'GET',
-      params,
+      params: getParams,
     });
     await gzFetch<string, CreateUserParams>({
       url: '/user/create',
       method: 'POST',
-      data,
+      params: postParams,
     });
 
     expect(mocks.request.mock.calls[0]?.[0]).toMatchObject({
       url: '/user/detail',
       method: 'GET',
-      params,
+      params: getParams,
     });
+    expect(mocks.request.mock.calls[0]?.[0].data).toBeUndefined();
     expect(mocks.request.mock.calls[1]?.[0]).toMatchObject({
       url: '/user/create',
       method: 'POST',
-      data,
+      data: postParams,
     });
+    expect(mocks.request.mock.calls[1]?.[0].params).toBeUndefined();
+  });
+
+  it('maps params to query for DELETE and to body for PUT', async () => {
+    const deleteParams = { id: 'user-1' };
+    const putParams = { name: 'Alice' };
+    mocks.request.mockResolvedValue({ data: 'ok', status: 200, headers: {} });
+    const client = createGzFetch();
+
+    await client({
+      url: '/user',
+      method: 'DELETE',
+      params: deleteParams,
+    });
+    await client({
+      url: '/user',
+      method: 'PUT',
+      params: putParams,
+    });
+
+    expect(mocks.request.mock.calls[0]?.[0]).toMatchObject({
+      method: 'DELETE',
+      params: deleteParams,
+    });
+    expect(mocks.request.mock.calls[0]?.[0].data).toBeUndefined();
+    expect(mocks.request.mock.calls[1]?.[0]).toMatchObject({
+      method: 'PUT',
+      data: putParams,
+    });
+    expect(mocks.request.mock.calls[1]?.[0].params).toBeUndefined();
   });
 
   it.each([201, 204])('classifies HTTP %s as an HTTP error', async (status) => {
@@ -395,7 +426,7 @@ describe('createGzFetch', () => {
     const result = await createGzFetch()<Blob>({
       url: '/export',
       method: 'POST',
-      data: { scope: 'all' },
+      params: { scope: 'all' },
       responseType: 'blob',
       signal: controller.signal,
     });

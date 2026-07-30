@@ -14,12 +14,12 @@ export function configureGzFetch(options: CreateGzFetchOptions): void {
   defaultClient = createGzFetch(options);
 }
 
-export async function gzFetch<TResponse, TRequestData = unknown>(
-  config: GzRequestConfig<TRequestData>,
+export async function gzFetch<TResponse, TRequestParams = unknown>(
+  config: GzRequestConfig<TRequestParams>,
 ): Promise<TResponse> {
   if (!defaultClient) {
     throw new Error(NOT_CONFIGURED_MESSAGE);
   }
 
-  return defaultClient<TResponse, TRequestData>(config);
+  return defaultClient<TResponse, TRequestParams>(config);
 }
