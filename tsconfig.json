@@ -6,9 +6,9 @@
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@lishenchan/gz-pc/fetch": ["src/fetch/index.ts"],
-      "@lishenchan/gz-pc/hooks": ["src/hooks/index.ts"],
-      "@lishenchan/gz-pc/utils": ["src/utils/index.ts"]
+      "@gz-fronted/gz-pc/fetch": ["src/fetch/index.ts"],
+      "@gz-fronted/gz-pc/hooks": ["src/hooks/index.ts"],
+      "@gz-fronted/gz-pc/utils": ["src/utils/index.ts"]
     },
     "strict": true,
     "noUncheckedIndexedAccess": true,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_DATE_FORMAT, formatDate } from '@lishenchan/gz-pc/utils';
+import { DEFAULT_DATE_FORMAT, formatDate } from '@gz-fronted/gz-pc/utils';
 
 describe('formatDate', () => {
   const date = new Date(2026, 6, 28, 9, 8, 7, 6);

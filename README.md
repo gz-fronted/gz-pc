@@ -1,4 +1,4 @@
-# @lishenchan/gz-pc
+# @gz-fronted/gz-pc
 
 面向 GZ 前端项目的请求、Hooks 和轻量工具函数包。各子路径独立构建；只使用
 `utils` 时不会加载 Axios、React、ahooks 或 gg-ui。
@@ -6,7 +6,7 @@
 ## 安装
 
 ```bash
-npm install @lishenchan/gz-pc react @chenhui996/gg-ui
+npm install @gz-fronted/gz-pc react @chenhui996/gg-ui
 ```
 
 宿主项目需要提供以下 peer dependencies：
@@ -32,7 +32,7 @@ gz-fetch **只有在 HTTP Status 为 200 时才认为请求成功**。201、204 
 - 转换分页、字段、日期或任何服务端数据
 
 ```ts
-import { configureGzFetch, gzFetch } from '@lishenchan/gz-pc/fetch';
+import { configureGzFetch, gzFetch } from '@gz-fronted/gz-pc/fetch';
 
 // 应用初始化入口只调用一次；微前端重新挂载时可以覆盖上一次配置。
 configureGzFetch({
@@ -271,7 +271,7 @@ configureGzFetch({
 场景，例如多后端服务、独立 `baseURL`、独立 Token 或独立中间件链：
 
 ```ts
-import { createGzFetch } from '@lishenchan/gz-pc/fetch';
+import { createGzFetch } from '@gz-fronted/gz-pc/fetch';
 
 const reportingFetch = createGzFetch({
   baseURL: '/reporting-api',
@@ -308,7 +308,7 @@ import {
   useDebounceFn,
   usePagination,
   useRequest,
-} from '@lishenchan/gz-pc/hooks';
+} from '@gz-fronted/gz-pc/hooks';
 ```
 
 `gz-pc/hooks` 通过 `export * from 'ahooks'` 完整透传 ahooks 的公开 API，作为团队
@@ -324,7 +324,7 @@ export * from './use-table-height';
 ## formatDate
 
 ```ts
-import { formatDate } from '@lishenchan/gz-pc/utils';
+import { formatDate } from '@gz-fronted/gz-pc/utils';
 
 formatDate(new Date()); // YYYY-MM-DD HH:mm:ss
 formatDate(Date.now(), 'YYYY-MM-DD');
@@ -336,7 +336,7 @@ formatDate(Date.now(), 'YYYY-MM-DD');
 ## Query 参数
 
 ```ts
-import { objectToQuery, queryToObject } from '@lishenchan/gz-pc/utils';
+import { objectToQuery, queryToObject } from '@gz-fronted/gz-pc/utils';
 
 queryToObject('https://example.com/list?page=1&tag=a&tag=b');
 // { page: '1', tag: ['a', 'b'] }
@@ -391,7 +391,7 @@ npm pack
 然后在业务项目安装生成的 `.tgz`：
 
 ```bash
-npm install ../gz-pc/lishenchan-gz-pc-0.1.0.tgz
+npm install ../gz-pc/gz-fronted-gz-pc-0.1.0.tgz
 ```
 
 也可以在联调期间使用业务项目支持的 workspace 或本地 `file:` 依赖。发布前建议

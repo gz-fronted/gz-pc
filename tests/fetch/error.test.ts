@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getResponseMessage } from '@lishenchan/gz-pc/fetch';
+import { getResponseMessage } from '@gz-fronted/gz-pc/fetch';
 
 describe('getResponseMessage', () => {
   it('only returns a non-empty string msg', () => {

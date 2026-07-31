@@ -30,7 +30,7 @@ describe('package exports', () => {
     const parsed: unknown = JSON.parse(contents);
     const manifest = parsed as PackageManifest;
 
-    expect(manifest.name).toBe('@lishenchan/gz-pc');
+    expect(manifest.name).toBe('@gz-fronted/gz-pc');
     expect(manifest.sideEffects).toBe(false);
 
     expect(manifest.exports['.']).toBeUndefined();

@@ -5,7 +5,7 @@ import {
   useDebounceFn,
   usePagination,
   useRequest,
-} from '@lishenchan/gz-pc/hooks';
+} from '@gz-fronted/gz-pc/hooks';
 
 describe('hooks entry', () => {
   it('passes through public ahooks APIs', () => {

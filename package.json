@@ -1,5 +1,5 @@
 {
-  "name": "@lishenchan/gz-pc",
+  "name": "@gz-fronted/gz-pc",
   "version": "0.1.0",
   "description": "Shared fetch, hooks and utility primitives for GZ frontend applications.",
   "license": "MIT",

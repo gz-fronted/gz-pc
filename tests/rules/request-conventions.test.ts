@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import { describe, expect, it } from 'vitest';
 
-import type { GzRequestConfig } from '@lishenchan/gz-pc/fetch';
+import type { GzRequestConfig } from '@gz-fronted/gz-pc/fetch';
 
 describe('gz-fetch request conventions', () => {
   it('keeps response and request params types independent', () => {

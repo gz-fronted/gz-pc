@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { objectToQuery, queryToObject } from '@lishenchan/gz-pc/utils';
+import { objectToQuery, queryToObject } from '@gz-fronted/gz-pc/utils';
 
 describe('queryToObject', () => {
   it('parses a complete URL and ignores its hash', () => {

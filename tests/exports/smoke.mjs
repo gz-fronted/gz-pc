@@ -2,13 +2,13 @@ import {
   configureGzFetch,
   createGzFetch,
   gzFetch,
-} from '@lishenchan/gz-pc/fetch';
-import { useRequest } from '@lishenchan/gz-pc/hooks';
+} from '@gz-fronted/gz-pc/fetch';
+import { useRequest } from '@gz-fronted/gz-pc/hooks';
 import {
   formatDate,
   objectToQuery,
   queryToObject,
-} from '@lishenchan/gz-pc/utils';
+} from '@gz-fronted/gz-pc/utils';
 import { createRequire } from 'node:module';
 
 if (
@@ -24,9 +24,9 @@ if (
 }
 
 const require = createRequire(import.meta.url);
-const fetchCjs = require('@lishenchan/gz-pc/fetch');
-const hooksCjs = require('@lishenchan/gz-pc/hooks');
-const utilsCjs = require('@lishenchan/gz-pc/utils');
+const fetchCjs = require('@gz-fronted/gz-pc/fetch');
+const hooksCjs = require('@gz-fronted/gz-pc/hooks');
+const utilsCjs = require('@gz-fronted/gz-pc/utils');
 
 if (
   typeof fetchCjs.createGzFetch !== 'function' ||

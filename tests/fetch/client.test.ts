@@ -15,7 +15,7 @@ import {
   GzFetchError,
   type GzFetchMiddleware,
   type GzRequestHeaders,
-} from '@lishenchan/gz-pc/fetch';
+} from '@gz-fronted/gz-pc/fetch';
 
 const mocks = vi.hoisted(() => ({
   request: vi.fn<(config: AxiosRequestConfig) => Promise<MockResponse>>(),
