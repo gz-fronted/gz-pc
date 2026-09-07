@@ -18,6 +18,7 @@ export interface GzRequestConfig<TRequestParams = unknown> {
   skipAuth?: boolean;
   responseType?: GzResponseType;
   signal?: AbortSignal;
+  withCredentials?: boolean;
 }
 
 export interface GzInternalRequestConfig extends Omit<
@@ -58,12 +59,22 @@ export interface GzFetchAuthOptions {
   formatToken?: (token: string) => string;
 }
 
+export interface GzFetchUnauthorizedOptions {
+  enabled?: boolean;
+  loginUrl?: string;
+  modalTitle?: string;
+  modalMessage?: string;
+  onUnauthorized?: () => void;
+}
+
 export interface CreateGzFetchOptions {
   baseURL?: string;
   timeout?: number;
+  validateStatus?: (status: number) => boolean;
   getToken?: () => string | undefined | Promise<string | undefined>;
   showErrorMessage?: boolean;
   auth?: GzFetchAuthOptions;
+  unauthorized?: GzFetchUnauthorizedOptions;
   middlewares?: readonly GzFetchMiddleware[];
 }
 

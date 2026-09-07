@@ -22,14 +22,38 @@ Axios 和 ahooks 是 gz-pc 的普通 dependencies，安装 gz-pc 时会自动安
 
 ## 请求协议
 
-gz-fetch **只有在 HTTP Status 为 200 时才认为请求成功**。201、204 以及其他
-所有状态都会进入统一错误处理。
+gz-fetch 默认将所有 HTTP `2xx` 状态视为成功，包括 200、201、202、204 和 206。
+非 `2xx` 状态进入统一错误处理并抛出 `GzFetchError`，错误中保留 `status` 和
+`responseData`。
 
 成功时直接返回后端原始的 `response.data`，不会返回 `AxiosResponse`，也不会：
 
 - 判断业务 `code`
 - 自动解包 `data`
 - 转换分页、字段、日期或任何服务端数据
+
+例如后端返回以下内容时，调用方取得的是包含 `code`、`data`、`message` 的完整
+对象：
+
+```ts
+interface CreateOrderResponse {
+  code: number;
+  data: {
+    orderId: string;
+  };
+  message: string;
+}
+
+const response = await gzFetch<CreateOrderResponse, CreateOrderParams>({
+  url: '/order/create',
+  method: 'POST',
+  params,
+});
+
+response.code;
+response.data.orderId;
+response.message;
+```
 
 ```ts
 import { configureGzFetch, gzFetch } from '@gz-fronted/gz-pc/fetch';
@@ -105,6 +129,7 @@ function gzFetch<TResponse, TRequestParams = unknown>(
 | `skipAuth`         | `boolean`                              | 否   | 为 `true` 时跳过 Token 注入                |
 | `responseType`     | `'json' \| 'blob' \| 'text'`           | 否   | 响应数据类型，默认 `json`                  |
 | `signal`           | `AbortSignal`                          | 否   | 取消请求的标准 AbortSignal                 |
+| `withCredentials`  | `boolean`                              | 否   | 是否携带跨域 Cookie 等凭证                 |
 
 请求入参字段统一使用 `params`，业务代码不需要区分 Axios 的 `params` 和 `data`：
 
@@ -112,6 +137,8 @@ function gzFetch<TResponse, TRequestParams = unknown>(
 - POST、PUT：`params` 转为 Request Body。
 
 业务请求配置不支持 `data`，也不得混用 `params` 和 `data`。
+POST、PUT 的 `params` 支持 JSON 对象、`FormData`、`URLSearchParams` 和 `Blob`；
+自定义请求头通过 `headers` 传入。
 
 完整示例：
 
@@ -153,15 +180,38 @@ const result = await gzFetch<SaveResult, SaveParams>({
 | ------------------ | ----------------------------------------------------------- | ----------------- | -------------------------- |
 | `baseURL`          | `string`                                                    | 无                | 所有业务请求的基础地址     |
 | `timeout`          | `number`                                                    | `15000`           | 默认请求超时时间，单位毫秒 |
+| `validateStatus`   | `(status: number) => boolean`                               | 所有 `2xx`        | 自定义 HTTP 成功状态范围   |
 | `getToken`         | `() => string \| undefined \| Promise<string \| undefined>` | 无                | 每次请求前动态获取 Token   |
 | `showErrorMessage` | `boolean`                                                   | `true`            | 实例级错误提示开关         |
 | `auth.headerName`  | `string`                                                    | `Authorization`   | Token 请求头名称           |
 | `auth.formatToken` | `(token: string) => string`                                 | `Bearer ${token}` | Token 格式化函数           |
+| `unauthorized`     | `GzFetchUnauthorizedOptions`                                | 未开启            | 可选的 HTTP 401 统一处理   |
 | `middlewares`      | `readonly GzFetchMiddleware[]`                              | `[]`              | 请求、响应和错误中间件     |
 
-当前稳定 API 没有开放 Axios 的 `withCredentials`、`paramsSerializer`、
-`onUploadProgress`、`validateStatus` 等配置，也暂不支持 `PATCH`。业务代码只应传入
-上表列出的字段；如果后续确有通用场景，再通过 gz-pc 统一扩展类型和请求核心。
+需要覆盖默认成功状态时，只在应用初始化层配置：
+
+```ts
+configureGzFetch({
+  validateStatus: (status) => status === 200 || status === 304,
+});
+```
+
+当前稳定 API 没有开放 Axios 的 `paramsSerializer`、`onUploadProgress` 等配置，也
+暂不支持 `PATCH`。业务代码只应传入上表列出的字段；如果后续确有通用场景，再
+通过 gz-pc 统一扩展类型和请求核心。
+
+### 跨域凭证
+
+需要浏览器携带跨域 Cookie 等凭证时，在单次请求中开启 `withCredentials`：
+
+```ts
+await gzFetch<QueryPresetResponse, QueryPresetParams>({
+  url: '/queryFilterTemplate/list',
+  method: 'POST',
+  params,
+  withCredentials: true,
+});
+```
 
 ## Token
 
@@ -196,7 +246,7 @@ configureGzFetch({
 
 ## 错误提示
 
-HTTP 非 200 时仅尝试读取响应体的 `msg`。没有有效 `msg` 时使用默认文案，最终
+HTTP 非 `2xx` 时仅尝试读取响应体的 `msg`。没有有效 `msg` 时使用默认文案，最终
 抛出 `GzFetchError`。
 
 错误类型包括：
@@ -234,6 +284,76 @@ const promise = gzFetch<UserDetail>({
 controller.abort();
 await promise;
 ```
+
+## HTTP 401 统一处理
+
+401 统一处理默认关闭，未显式开启时继续执行原有 HTTP 错误提示和抛错逻辑，不弹窗、
+不跳转。需要启用时，在应用初始化配置中传入 `unauthorized.enabled: true`：
+
+```ts
+configureGzFetch({
+  baseURL: '/api',
+  getToken: () => runtimeToken,
+  unauthorized: {
+    enabled: true,
+    loginUrl: '/login',
+    modalTitle: '登录失效',
+    modalMessage: '当前登录状态已失效，请重新登录。',
+  },
+});
+```
+
+配置默认值如下：
+
+| 字段             | 类型         | 默认值                                  |
+| ---------------- | ------------ | --------------------------------------- |
+| `enabled`        | `boolean`    | `false`                                 |
+| `loginUrl`       | `string`     | `/login`                                |
+| `modalTitle`     | `string`     | `登录失效`                              |
+| `modalMessage`   | `string`     | `当前登录状态已失效，请重新登录。`      |
+| `onUnauthorized` | `() => void` | 无；确认后使用 `window.location.assign` |
+
+为了让普通错误消息和 401 弹窗都继承宿主项目当前的 gg-ui 主题，需要在应用根部的
+`ConfigProvider` 内挂载一次 `GzFetchFeedbackProvider`：
+
+```tsx
+import { GzFetchFeedbackProvider } from '@gz-fronted/gz-pc/fetch';
+import { ConfigProvider } from '@chenhui996/gg-ui';
+
+<ConfigProvider themeMode={themeMode}>
+  <GzFetchFeedbackProvider>
+    <App />
+  </GzFetchFeedbackProvider>
+</ConfigProvider>;
+```
+
+该 Provider 使用 `message.useMessage()` 和受控 gg-ui `Modal`，不会在已接入的项目中
+调用脱离 React 上下文的静态反馈 API。因此主题切换时，普通错误消息和 401 弹窗都会
+继续读取宿主 `ConfigProvider` 的主题 Token，无需复制亮色或暗色样式。业务页面不需要
+维护反馈状态。未挂载该 Provider 的已有项目仍会回退到原来的静态 `message.error`，
+不会产生 breaking change。`GzFetchUnauthorizedModal` 继续保留为兼容 API，但新项目
+优先使用统一 Provider。
+
+所有由同一份 gz-pc 包创建的默认客户端和独立客户端共享一个 401 管理器。首个 401
+打开弹窗，后续并发 401 不会创建新弹窗；取消或弹窗关闭动画结束后会释放状态，后续
+独立发生的 401 可以再次打开。确认操作也有同一状态锁，不会重复执行登录跳转。
+
+业务项目需要自定义 SSO、登出或状态清理时传入 `onUnauthorized`。用户确认后优先执行
+该回调；只有未提供回调时才通过 `window.location.assign(loginUrl)` 跳转：
+
+```ts
+configureGzFetch({
+  unauthorized: {
+    enabled: true,
+    onUnauthorized: () => {
+      authService.logout();
+    },
+  },
+});
+```
+
+开启该能力后，401 仍会作为 `GzFetchError` 抛给调用方，但请求核心不会再为同一个
+401 额外调用普通 `message.error`。其他 HTTP 错误、网络错误、超时和取消请求行为不变。
 
 ## 中间件
 

@@ -40,6 +40,12 @@ describe('gz-fetch request conventions', () => {
     expect(apiRules).toContain('请求入参字段统一使用 `params`');
     expect(apiRules).toContain('GET、DELETE 转为 URL Query');
     expect(apiRules).toContain('POST、PUT 转为 Request Body');
+    expect(apiRules).toContain('所有 HTTP `2xx` 状态视为成功');
+    expect(apiRules).toContain('原样返回完整的 `response.data`');
+    expect(apiRules).toContain('使用 `withCredentials: true`');
+    expect(apiRules).toContain('HTTP 401 统一弹窗和登录跳转默认关闭');
+    expect(apiRules).toContain('所有 gzFetch 实例共享同一个 401 管理器');
+    expect(apiRules).toContain('`GzFetchFeedbackProvider`');
     expect(apiRules).toContain('所有普通业务接口直接使用默认 `gzFetch`');
     expect(apiRules).toContain('`createGzFetch` 仅用于多后端服务');
     expect(readme).toContain('配置对象式请求调用');

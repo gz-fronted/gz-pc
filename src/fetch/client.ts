@@ -1,13 +1,17 @@
-import { message } from '@chenhui996/gg-ui';
 import axios, { AxiosHeaders } from 'axios';
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 import { toGzFetchError } from './error';
+import { showFetchErrorMessage } from './feedback';
 import {
   runErrorMiddlewares,
   runRequestMiddlewares,
   runResponseMiddlewares,
 } from './middleware';
+import {
+  openUnauthorizedModal,
+  resolveUnauthorizedOptions,
+} from './unauthorized';
 import type {
   CreateGzFetchOptions,
   GzFetchClient,
@@ -19,6 +23,8 @@ import type {
 
 const DEFAULT_TIMEOUT = 15_000;
 const DEFAULT_AUTH_HEADER = 'Authorization';
+const DEFAULT_VALIDATE_STATUS = (status: number): boolean =>
+  status >= 200 && status < 300;
 
 function toHeaderRecord(
   headers: AxiosResponse['headers'],
@@ -42,11 +48,12 @@ export function createGzFetch(
   const headerName = options.auth?.headerName ?? DEFAULT_AUTH_HEADER;
   const formatToken =
     options.auth?.formatToken ?? ((token: string) => `Bearer ${token}`);
+  const unauthorizedOptions = resolveUnauthorizedOptions(options.unauthorized);
 
   const instance = axios.create({
     ...(options.baseURL === undefined ? {} : { baseURL: options.baseURL }),
     timeout: options.timeout ?? DEFAULT_TIMEOUT,
-    validateStatus: (status) => status === 200,
+    validateStatus: options.validateStatus ?? DEFAULT_VALIDATE_STATUS,
   });
 
   async function request<TResponse, TRequestParams = unknown>(
@@ -91,6 +98,9 @@ export function createGzFetch(
         ...(currentConfig.signal === undefined
           ? {}
           : { signal: currentConfig.signal }),
+        ...(currentConfig.withCredentials === undefined
+          ? {}
+          : { withCredentials: currentConfig.withCredentials }),
       };
 
       const response = await instance.request<TResponse>(axiosConfig);
@@ -103,12 +113,24 @@ export function createGzFetch(
       return await runResponseMiddlewares(response.data, context, middlewares);
     } catch (originalError) {
       const error = toGzFetchError(originalError);
+      const shouldHandleUnauthorized =
+        unauthorizedOptions.enabled &&
+        error.type === 'HTTP_ERROR' &&
+        error.status === 401;
+      if (shouldHandleUnauthorized) {
+        openUnauthorizedModal(unauthorizedOptions);
+      }
+
       await runErrorMiddlewares(error, { config: currentConfig }, middlewares);
 
       const shouldShowError =
         currentConfig.showErrorMessage ?? showInstanceErrorMessage;
-      if (shouldShowError && error.type !== 'CANCELED_ERROR') {
-        message.error(error.message);
+      if (
+        shouldShowError &&
+        error.type !== 'CANCELED_ERROR' &&
+        !shouldHandleUnauthorized
+      ) {
+        showFetchErrorMessage(error.message);
       }
 
       throw error;

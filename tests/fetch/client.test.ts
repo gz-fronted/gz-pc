@@ -16,6 +16,10 @@ import {
   type GzFetchMiddleware,
   type GzRequestHeaders,
 } from '@gz-fronted/gz-pc/fetch';
+import {
+  getUnauthorizedSnapshot,
+  resetUnauthorizedManagerForTests,
+} from '../../src/fetch/unauthorized';
 
 const mocks = vi.hoisted(() => ({
   request: vi.fn<(config: AxiosRequestConfig) => Promise<MockResponse>>(),
@@ -77,6 +81,7 @@ beforeEach(() => {
   mocks.create.mockReset();
   mocks.messageError.mockReset();
   mocks.create.mockReturnValue({ request: mocks.request });
+  resetUnauthorizedManagerForTests();
 });
 
 describe('createGzFetch', () => {
@@ -163,26 +168,51 @@ describe('createGzFetch', () => {
     expect(mocks.request).toHaveBeenCalledTimes(2);
   });
 
-  it('configures Axios so only HTTP 200 is successful', () => {
+  it('configures Axios so every HTTP 2xx status is successful', () => {
     createGzFetch();
 
     const validateStatus = mocks.create.mock.calls[0]?.[0]?.validateStatus;
-    expect(validateStatus?.(200)).toBe(true);
-    expect(validateStatus?.(201)).toBe(false);
-    expect(validateStatus?.(204)).toBe(false);
+    for (const status of [200, 201, 202, 204, 206, 299]) {
+      expect(validateStatus?.(status)).toBe(true);
+    }
+    for (const status of [199, 300, 400, 500]) {
+      expect(validateStatus?.(status)).toBe(false);
+    }
   });
 
-  it('returns response.data unchanged for HTTP 200', async () => {
-    const body = { records: [], total: 0, data: { untouched: true } };
-    mocks.request.mockResolvedValue({ data: body, status: 200, headers: {} });
+  it('supports an instance-level custom validateStatus', () => {
+    const validateStatus = vi.fn((status: number) => status === 304);
 
-    const result = await createGzFetch()<typeof body>({
-      url: '/list',
-      method: 'GET',
-    });
+    createGzFetch({ validateStatus });
 
-    expect(result).toBe(body);
+    expect(mocks.create.mock.calls[0]?.[0]?.validateStatus).toBe(
+      validateStatus,
+    );
   });
+
+  it.each([200, 201, 202, 204, 206])(
+    'returns the complete response.data unchanged for HTTP %s',
+    async (status) => {
+      const body = {
+        code: 200,
+        data: { orderId: '1001' },
+        message: '成功',
+      };
+      mocks.request.mockResolvedValue({ data: body, status, headers: {} });
+
+      const result = await createGzFetch()<typeof body>({
+        url: '/order',
+        method: 'GET',
+      });
+
+      expect(result).toBe(body);
+      expect(result).toEqual({
+        code: 200,
+        data: { orderId: '1001' },
+        message: '成功',
+      });
+    },
+  );
 
   it('maps params to query for GET and to body for POST', async () => {
     interface CreateUserParams {
@@ -248,15 +278,113 @@ describe('createGzFetch', () => {
     expect(mocks.request.mock.calls[1]?.[0].params).toBeUndefined();
   });
 
-  it.each([201, 204])('classifies HTTP %s as an HTTP error', async (status) => {
-    mocks.request.mockRejectedValue(responseError(status, undefined));
+  it('passes JSON, FormData, URLSearchParams and Blob request bodies unchanged', async () => {
+    const formData = new FormData();
+    formData.set('name', 'Alice');
+    const requestBodies: unknown[] = [
+      { name: 'Alice' },
+      formData,
+      new URLSearchParams({ name: 'Alice' }),
+      new Blob(['content'], { type: 'text/plain' }),
+    ];
+    mocks.request.mockResolvedValue({ data: 'ok', status: 200, headers: {} });
+    const client = createGzFetch();
+
+    for (const params of requestBodies) {
+      await client({ url: '/body', method: 'POST', params });
+    }
+
+    requestBodies.forEach((body, index) => {
+      expect(mocks.request.mock.calls[index]?.[0].data).toBe(body);
+    });
+  });
+
+  it('forwards custom headers and withCredentials', async () => {
+    mocks.request.mockResolvedValue({ data: 'ok', status: 200, headers: {} });
+
+    await createGzFetch()({
+      url: '/cross-origin',
+      method: 'POST',
+      params: { id: '1001' },
+      headers: { 'X-Request-Source': 'gz-pc' },
+      withCredentials: true,
+    });
+
+    expect(requestHeadersAt(0).get('X-Request-Source')).toBe('gz-pc');
+    expect(mocks.request.mock.calls[0]?.[0].withCredentials).toBe(true);
+  });
+
+  it.each([199, 300, 400, 500])(
+    'classifies HTTP %s as an HTTP error and preserves context',
+    async (status) => {
+      const responseData = { status, reason: 'failed' };
+      mocks.request.mockRejectedValue(responseError(status, responseData));
+
+      await expect(
+        createGzFetch()({ url: '/resource', method: 'GET' }),
+      ).rejects.toMatchObject({
+        type: 'HTTP_ERROR',
+        status,
+        responseData,
+      });
+    },
+  );
+
+  it('preserves the existing 401 behavior when unauthorized handling is disabled', async () => {
+    mocks.request.mockRejectedValue(responseError(401, undefined));
 
     await expect(
-      createGzFetch()({ url: '/resource', method: 'GET' }),
-    ).rejects.toMatchObject({
-      type: 'HTTP_ERROR',
-      status,
+      createGzFetch()({ url: '/protected', method: 'GET' }),
+    ).rejects.toMatchObject({ type: 'HTTP_ERROR', status: 401 });
+
+    expect(getUnauthorizedSnapshot().phase).toBe('idle');
+    expect(mocks.messageError).toHaveBeenCalledOnce();
+  });
+
+  it('opens the shared modal state and suppresses the ordinary message when enabled', async () => {
+    mocks.request.mockRejectedValue(responseError(401, undefined));
+
+    await expect(
+      createGzFetch({
+        unauthorized: {
+          enabled: true,
+          loginUrl: '/sso/login',
+          modalTitle: '会话已结束',
+          modalMessage: '请重新完成身份认证。',
+        },
+      })({ url: '/protected', method: 'GET' }),
+    ).rejects.toMatchObject({ type: 'HTTP_ERROR', status: 401 });
+
+    expect(getUnauthorizedSnapshot()).toMatchObject({
+      phase: 'open',
+      options: {
+        enabled: true,
+        loginUrl: '/sso/login',
+        modalTitle: '会话已结束',
+        modalMessage: '请重新完成身份认证。',
+      },
     });
+    expect(mocks.messageError).not.toHaveBeenCalled();
+  });
+
+  it('shares one unauthorized flow across concurrent requests and clients', async () => {
+    mocks.request.mockRejectedValue(responseError(401, undefined));
+    const firstClient = createGzFetch({ unauthorized: { enabled: true } });
+    const secondClient = createGzFetch({ unauthorized: { enabled: true } });
+
+    const outcomes = await Promise.allSettled([
+      firstClient({ url: '/first-a', method: 'GET' }),
+      firstClient({ url: '/first-b', method: 'GET' }),
+      secondClient({ url: '/second-a', method: 'GET' }),
+      secondClient({ url: '/second-b', method: 'GET' }),
+      secondClient({ url: '/second-c', method: 'GET' }),
+    ]);
+
+    expect(outcomes.every((outcome) => outcome.status === 'rejected')).toBe(
+      true,
+    );
+    expect(getUnauthorizedSnapshot().phase).toBe('open');
+    expect(mocks.messageError).not.toHaveBeenCalled();
   });
 
   it('uses only a non-empty msg from an HTTP error body', async () => {
