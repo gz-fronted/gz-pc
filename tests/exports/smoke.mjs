@@ -1,6 +1,8 @@
 import {
   configureGzFetch,
   createGzFetch,
+  GzFetchFeedbackProvider,
+  GzFetchUnauthorizedModal,
   gzFetch,
 } from '@gz-fronted/gz-pc/fetch';
 import { useRequest } from '@gz-fronted/gz-pc/hooks';
@@ -14,6 +16,8 @@ import { createRequire } from 'node:module';
 if (
   typeof createGzFetch !== 'function' ||
   typeof configureGzFetch !== 'function' ||
+  typeof GzFetchFeedbackProvider !== 'function' ||
+  typeof GzFetchUnauthorizedModal !== 'function' ||
   typeof gzFetch !== 'function' ||
   typeof useRequest !== 'function' ||
   typeof formatDate !== 'function' ||
@@ -31,6 +35,8 @@ const utilsCjs = require('@gz-fronted/gz-pc/utils');
 if (
   typeof fetchCjs.createGzFetch !== 'function' ||
   typeof fetchCjs.configureGzFetch !== 'function' ||
+  typeof fetchCjs.GzFetchFeedbackProvider !== 'function' ||
+  typeof fetchCjs.GzFetchUnauthorizedModal !== 'function' ||
   typeof fetchCjs.gzFetch !== 'function' ||
   typeof hooksCjs.useRequest !== 'function' ||
   typeof utilsCjs.formatDate !== 'function' ||
