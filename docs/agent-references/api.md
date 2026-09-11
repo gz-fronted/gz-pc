@@ -26,8 +26,23 @@ gzFetch<ResponseData>({
 请求入参字段统一使用 `params`，不得在业务请求配置中使用 `data`。请求核心根据
 HTTP Method 进行唯一映射：
 
-- GET、DELETE 转为 URL Query。
-- POST、PUT 转为 Request Body。
+- GET 转为 URL Query。
+- POST、PUT、DELETE 转为 Request Body。
+
+DELETE 的 `paramsInUrl` 默认为 `false`。仅当兼容明确要求 Query 参数的历史或特殊
+接口时设置为 `true`；此时 `params` 只转为 URL Query，不再发送 Request Body：
+
+```ts
+gzFetch<void, { id: number }>({
+  url: '/users',
+  method: 'DELETE',
+  params: { id: 1 },
+  paramsInUrl: true,
+});
+```
+
+`paramsInUrl` 仅对 DELETE 生效，并且不会作为请求参数发送给后端。GET、POST、PUT
+不得使用该配置。
 
 业务代码不需要理解 Axios 的 `params` 与 `data` 差异，也不得自行维护另一套
 映射规则。
@@ -50,9 +65,9 @@ gg-ui `ConfigProvider` 内挂载一次 `GzFetchFeedbackProvider`。该 Provider 
 成功响应必须原样返回完整的 `response.data`，不得判断业务 `code`、自动解包业务
 `data`，也不得转换分页、字段、日期或枚举。
 
-单次请求需要携带跨域 Cookie 等凭证时，使用 `withCredentials: true`。POST、PUT
-的 `params` 必须支持 JSON、`FormData`、`URLSearchParams` 和 `Blob`，自定义请求头
-通过 `headers` 传入。
+单次请求需要携带跨域 Cookie 等凭证时，使用 `withCredentials: true`。POST、PUT、
+DELETE 的 `params` 必须支持 JSON、`FormData`、`URLSearchParams` 和 `Blob`，自定义
+请求头通过 `headers` 传入。
 
 `configureGzFetch` 只能在应用初始化层调用。普通业务模块不得反复配置默认实例，
 也不得自行创建请求实例。

@@ -249,14 +249,14 @@ describe('createGzFetch', () => {
     expect(mocks.request.mock.calls[1]?.[0].params).toBeUndefined();
   });
 
-  it('maps params to query for DELETE and to body for PUT', async () => {
-    const deleteParams = { id: 'user-1' };
+  it('maps params to body for DELETE by default and for PUT', async () => {
+    const deleteParams = { ids: [1, 2, 3] };
     const putParams = { name: 'Alice' };
     mocks.request.mockResolvedValue({ data: 'ok', status: 200, headers: {} });
     const client = createGzFetch();
 
     await client({
-      url: '/user',
+      url: '/users/batch-delete',
       method: 'DELETE',
       params: deleteParams,
     });
@@ -267,15 +267,59 @@ describe('createGzFetch', () => {
     });
 
     expect(mocks.request.mock.calls[0]?.[0]).toMatchObject({
+      url: '/users/batch-delete',
       method: 'DELETE',
-      params: deleteParams,
+      data: deleteParams,
     });
-    expect(mocks.request.mock.calls[0]?.[0].data).toBeUndefined();
+    expect(mocks.request.mock.calls[0]?.[0].params).toBeUndefined();
+    expect(mocks.request.mock.calls[0]?.[0]).not.toHaveProperty('paramsInUrl');
     expect(mocks.request.mock.calls[1]?.[0]).toMatchObject({
       method: 'PUT',
       data: putParams,
     });
     expect(mocks.request.mock.calls[1]?.[0].params).toBeUndefined();
+  });
+
+  it('maps DELETE params only to query when paramsInUrl is true', async () => {
+    const deleteParams = { id: 1, type: 'A' };
+    mocks.request.mockResolvedValue({ data: 'ok', status: 200, headers: {} });
+    const client = createGzFetch();
+
+    await client({
+      url: '/resource',
+      method: 'DELETE',
+      params: deleteParams,
+      paramsInUrl: true,
+    });
+
+    expect(mocks.request.mock.calls[0]?.[0]).toMatchObject({
+      url: '/resource',
+      method: 'DELETE',
+      params: deleteParams,
+    });
+    expect(mocks.request.mock.calls[0]?.[0].data).toBeUndefined();
+    expect(mocks.request.mock.calls[0]?.[0]).not.toHaveProperty('paramsInUrl');
+  });
+
+  it('ignores paramsInUrl for methods other than DELETE', async () => {
+    const postParams = { name: 'Alice' };
+    mocks.request.mockResolvedValue({ data: 'ok', status: 200, headers: {} });
+    const client = createGzFetch();
+
+    await client({
+      url: '/resource',
+      method: 'POST',
+      params: postParams,
+      paramsInUrl: true,
+    });
+
+    expect(mocks.request.mock.calls[0]?.[0]).toMatchObject({
+      url: '/resource',
+      method: 'POST',
+      data: postParams,
+    });
+    expect(mocks.request.mock.calls[0]?.[0].params).toBeUndefined();
+    expect(mocks.request.mock.calls[0]?.[0]).not.toHaveProperty('paramsInUrl');
   });
 
   it('passes JSON, FormData, URLSearchParams and Blob request bodies unchanged', async () => {

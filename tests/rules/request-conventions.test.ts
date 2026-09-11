@@ -38,8 +38,10 @@ describe('gz-fetch request conventions', () => {
     expect(apiRules).toContain('禁止在业务代码中混用');
     expect(apiRules).toContain('请求地址字段必须使用 `url`');
     expect(apiRules).toContain('请求入参字段统一使用 `params`');
-    expect(apiRules).toContain('GET、DELETE 转为 URL Query');
-    expect(apiRules).toContain('POST、PUT 转为 Request Body');
+    expect(apiRules).toContain('GET 转为 URL Query');
+    expect(apiRules).toContain('POST、PUT、DELETE 转为 Request Body');
+    expect(apiRules).toContain('DELETE 的 `paramsInUrl` 默认为 `false`');
+    expect(apiRules).toContain('`paramsInUrl` 仅对 DELETE 生效');
     expect(apiRules).toContain('所有 HTTP `2xx` 状态视为成功');
     expect(apiRules).toContain('原样返回完整的 `response.data`');
     expect(apiRules).toContain('使用 `withCredentials: true`');
