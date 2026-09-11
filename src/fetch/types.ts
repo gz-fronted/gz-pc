@@ -12,6 +12,7 @@ export interface GzRequestConfig<TRequestParams = unknown> {
   url: string;
   method: GzRequestMethod;
   params?: TRequestParams;
+  paramsInUrl?: boolean;
   headers?: Record<string, string>;
   timeout?: number;
   showErrorMessage?: boolean;

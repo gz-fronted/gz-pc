@@ -76,7 +76,9 @@ export function createGzFetch(
       );
 
       const usesRequestBody =
-        currentConfig.method === 'POST' || currentConfig.method === 'PUT';
+        currentConfig.method === 'POST' ||
+        currentConfig.method === 'PUT' ||
+        (currentConfig.method === 'DELETE' && !currentConfig.paramsInUrl);
       const axiosConfig: AxiosRequestConfig = {
         url: currentConfig.url,
         method: currentConfig.method,

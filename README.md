@@ -123,6 +123,7 @@ function gzFetch<TResponse, TRequestParams = unknown>(
 | `url`              | `string`                               | 是   | 请求地址；配置了 `baseURL` 时会与其组合    |
 | `method`           | `'GET' \| 'POST' \| 'PUT' \| 'DELETE'` | 是   | 请求方法，统一使用大写                     |
 | `params`           | `TRequestParams`                       | 否   | 统一请求入参，由第二个泛型约束             |
+| `paramsInUrl`      | `boolean`                              | 否   | 仅 DELETE 生效；为 `true` 时参数放入 Query |
 | `headers`          | `Record<string, string>`               | 否   | 本次请求附加的请求头                       |
 | `timeout`          | `number`                               | 否   | 本次请求超时时间，单位毫秒；优先于实例配置 |
 | `showErrorMessage` | `boolean`                              | 否   | 是否调用 gg-ui 的 `message.error`          |
@@ -133,11 +134,23 @@ function gzFetch<TResponse, TRequestParams = unknown>(
 
 请求入参字段统一使用 `params`，业务代码不需要区分 Axios 的 `params` 和 `data`：
 
-- GET、DELETE：`params` 转为 URL Query。
-- POST、PUT：`params` 转为 Request Body。
+- GET：`params` 转为 URL Query。
+- POST、PUT、DELETE：`params` 转为 Request Body。
+
+DELETE 的 `paramsInUrl` 默认为 `false`。仅当兼容明确要求 Query 参数的 DELETE
+接口时设置为 `true`，此时 `params` 只转为 URL Query，不再发送 Request Body：
+
+```ts
+await gzFetch<void, { id: number }>({
+  url: '/users',
+  method: 'DELETE',
+  params: { id: 1 },
+  paramsInUrl: true,
+});
+```
 
 业务请求配置不支持 `data`，也不得混用 `params` 和 `data`。
-POST、PUT 的 `params` 支持 JSON 对象、`FormData`、`URLSearchParams` 和 `Blob`；
+POST、PUT、DELETE 的 `params` 支持 JSON 对象、`FormData`、`URLSearchParams` 和 `Blob`；
 自定义请求头通过 `headers` 传入。
 
 完整示例：
