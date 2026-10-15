@@ -74,6 +74,8 @@ export interface CreateGzFetchOptions {
   validateStatus?: (status: number) => boolean;
   getToken?: () => string | undefined | Promise<string | undefined>;
   showErrorMessage?: boolean;
+  /** Preserve unsafe JSON numbers as their original strings. Defaults to false. */
+  preserveNumberPrecision?: boolean;
   auth?: GzFetchAuthOptions;
   unauthorized?: GzFetchUnauthorizedOptions;
   middlewares?: readonly GzFetchMiddleware[];

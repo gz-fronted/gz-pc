@@ -65,6 +65,13 @@ gz-ui-web `ConfigProvider` 内挂载一次 `GzFetchFeedbackProvider`。该 Provi
 成功响应必须原样返回完整的 `response.data`，不得判断业务 `code`、自动解包业务
 `data`，也不得转换分页、字段、日期或枚举。
 
+需要 JSON 数值精度保护时，只在应用初始化层配置
+`configureGzFetch({ preserveNumberPrecision: true })`，默认关闭。
+开启后，超出安全整数范围或转为 `number` 会丢失十进制有效数字的数值保留为原始字符串；
+普通数字和已有字符串保持原类型。成功和 HTTP 错误响应规则一致，显式文本和 Blob
+响应不参与转换。可能返回字符串的 DTO 字段需要声明为 `string | number`，不得依靠
+`onResponse` 中的 `String()` 修复已经发生的精度损失。
+
 单次请求需要携带跨域 Cookie 等凭证时，使用 `withCredentials: true`。POST、PUT、
 DELETE 的 `params` 必须支持 JSON、`FormData`、`URLSearchParams` 和 `Blob`，自定义
 请求头通过 `headers` 传入。

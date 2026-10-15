@@ -13,6 +13,9 @@ importers:
       axios:
         specifier: ^1.13.6
         version: 1.13.6(debug@4.4.3(supports-color@7.2.0))
+      lossless-json:
+        specifier: 4.3.1
+        version: 4.3.1
     devDependencies:
       '@commitlint/cli':
         specifier: 21.2.1
@@ -3229,6 +3232,12 @@ packages:
       }
     hasBin: true
 
+  lossless-json@4.3.1:
+    resolution:
+      {
+        integrity: sha512-SqD/Bg3ZfltBJ2Z14hJ/BihnvtV553WO4g9/ePtlp4lrnl9jF3AdIJt53A/Wkg/0Li+LMfxaBqgx1MiFZdQlpQ==,
+      }
+
   lunar-typescript@1.8.6:
     resolution:
       {
@@ -6289,6 +6298,8 @@ snapshots:
   loose-envify@1.4.0:
     dependencies:
       js-tokens: 4.0.0
+
+  lossless-json@4.3.1: {}
 
   lunar-typescript@1.8.6: {}
 

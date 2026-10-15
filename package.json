@@ -54,7 +54,8 @@
   },
   "dependencies": {
     "ahooks": "^3.9.7",
-    "axios": "^1.13.6"
+    "axios": "^1.13.6",
+    "lossless-json": "4.3.1"
   },
   "peerDependencies": {
     "gz-ui-web": "^1.0.1",

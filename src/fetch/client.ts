@@ -8,6 +8,7 @@ import {
   runRequestMiddlewares,
   runResponseMiddlewares,
 } from './middleware';
+import { transformResponsePreservingNumbers } from './precision';
 import {
   openUnauthorizedModal,
   resolveUnauthorizedOptions,
@@ -54,6 +55,9 @@ export function createGzFetch(
     ...(options.baseURL === undefined ? {} : { baseURL: options.baseURL }),
     timeout: options.timeout ?? DEFAULT_TIMEOUT,
     validateStatus: options.validateStatus ?? DEFAULT_VALIDATE_STATUS,
+    ...(options.preserveNumberPrecision
+      ? { transformResponse: [transformResponsePreservingNumbers] }
+      : {}),
   });
 
   async function request<TResponse, TRequestParams = unknown>(

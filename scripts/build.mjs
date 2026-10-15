@@ -13,7 +13,7 @@ await build({
   sourcemap: false,
   splitting: false,
   treeshake: true,
-  external: ['react', 'ahooks', 'axios', 'gz-ui-web'],
+  external: ['react', 'ahooks', 'axios', 'gz-ui-web', 'lossless-json'],
   esbuildOptions(options) {
     options.charset = 'utf8';
   },
