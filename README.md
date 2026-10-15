@@ -1,21 +1,32 @@
 # @gz-fronted/gz-pc
 
 面向 GZ 前端项目的请求、Hooks 和轻量工具函数包。各子路径独立构建；只使用
-`utils` 时不会加载 Axios、React、ahooks 或 gg-ui。
+`utils` 时不会加载 Axios、React、ahooks 或 gz-ui-web。
 
 ## 安装
 
 ```bash
-npm install @gz-fronted/gz-pc react @chenhui996/gg-ui
+npm install @gz-fronted/gz-pc react@^19 react-dom@^19 gz-ui-web@1.0.1 antd@6.3.3 ag-grid-react@36.0.1 ag-grid-community@36.0.1 ag-grid-enterprise@36.0.1
 ```
 
 宿主项目需要提供以下 peer dependencies：
 
-- React 18 或 19
-- `@chenhui996/gg-ui` 0.1
+- React 19
+- `gz-ui-web` ^1.0.1（开发验证固定使用 1.0.1）
 
-Axios 和 ahooks 是 gz-pc 的普通 dependencies，安装 gz-pc 时会自动安装，宿主
-无需手工添加。React 和 gg-ui 不会打入本包产物。
+`gz-ui-web@1.0.1` 还要求宿主提供 React DOM 19、AntD 6.3.3，以及
+`ag-grid-react`、`ag-grid-community`、`ag-grid-enterprise` 36.0.1。
+在应用入口引入一次组件库样式：
+
+```ts
+import 'gz-ui-web/gz-ui-web.css';
+```
+
+从旧版迁移时，宿主需要将组件导入和 `ConfigProvider` 统一切换到 `gz-ui-web`，
+并将旧样式入口替换为上述入口。本次 peer 依赖迁移包含兼容性变化；React 18 项目需要先升级。
+
+Axios、ahooks 和 lossless-json 是 gz-pc 的普通 dependencies，安装 gz-pc 时会自动安装，宿主
+无需手工添加。React 和 gz-ui-web 不会打入本包产物。
 
 本包刻意不提供聚合根入口，请始终从 `/fetch`、`/hooks` 或 `/utils` 子路径导入，
 避免加载无关模块。
@@ -30,7 +41,7 @@ gz-fetch 默认将所有 HTTP `2xx` 状态视为成功，包括 200、201、202�
 
 - 判断业务 `code`
 - 自动解包 `data`
-- 转换分页、字段、日期或任何服务端数据
+- 转换分页、字段或日期（数值精度保护需在初始化时显式开启）
 
 例如后端返回以下内容时，调用方取得的是包含 `code`、`data`、`message` 的完整
 对象：
@@ -126,7 +137,7 @@ function gzFetch<TResponse, TRequestParams = unknown>(
 | `paramsInUrl`      | `boolean`                              | 否   | 仅 DELETE 生效；为 `true` 时参数放入 Query |
 | `headers`          | `Record<string, string>`               | 否   | 本次请求附加的请求头                       |
 | `timeout`          | `number`                               | 否   | 本次请求超时时间，单位毫秒；优先于实例配置 |
-| `showErrorMessage` | `boolean`                              | 否   | 是否调用 gg-ui 的 `message.error`          |
+| `showErrorMessage` | `boolean`                              | 否   | 是否调用 gz-ui-web 的 `message.error`      |
 | `skipAuth`         | `boolean`                              | 否   | 为 `true` 时跳过 Token 注入                |
 | `responseType`     | `'json' \| 'blob' \| 'text'`           | 否   | 响应数据类型，默认 `json`                  |
 | `signal`           | `AbortSignal`                          | 否   | 取消请求的标准 AbortSignal                 |
@@ -189,17 +200,18 @@ const result = await gzFetch<SaveResult, SaveParams>({
 
 `configureGzFetch` 只在应用初始化层调用。它接收以下配置：
 
-| 字段               | 类型                                                        | 默认值            | 说明                       |
-| ------------------ | ----------------------------------------------------------- | ----------------- | -------------------------- |
-| `baseURL`          | `string`                                                    | 无                | 所有业务请求的基础地址     |
-| `timeout`          | `number`                                                    | `15000`           | 默认请求超时时间，单位毫秒 |
-| `validateStatus`   | `(status: number) => boolean`                               | 所有 `2xx`        | 自定义 HTTP 成功状态范围   |
-| `getToken`         | `() => string \| undefined \| Promise<string \| undefined>` | 无                | 每次请求前动态获取 Token   |
-| `showErrorMessage` | `boolean`                                                   | `true`            | 实例级错误提示开关         |
-| `auth.headerName`  | `string`                                                    | `Authorization`   | Token 请求头名称           |
-| `auth.formatToken` | `(token: string) => string`                                 | `Bearer ${token}` | Token 格式化函数           |
-| `unauthorized`     | `GzFetchUnauthorizedOptions`                                | 未开启            | 可选的 HTTP 401 统一处理   |
-| `middlewares`      | `readonly GzFetchMiddleware[]`                              | `[]`              | 请求、响应和错误中间件     |
+| 字段                      | 类型                                                        | 默认值            | 说明                              |
+| ------------------------- | ----------------------------------------------------------- | ----------------- | --------------------------------- |
+| `baseURL`                 | `string`                                                    | 无                | 所有业务请求的基础地址            |
+| `timeout`                 | `number`                                                    | `15000`           | 默认请求超时时间，单位毫秒        |
+| `validateStatus`          | `(status: number) => boolean`                               | 所有 `2xx`        | 自定义 HTTP 成功状态范围          |
+| `getToken`                | `() => string \| undefined \| Promise<string \| undefined>` | 无                | 每次请求前动态获取 Token          |
+| `showErrorMessage`        | `boolean`                                                   | `true`            | 实例级错误提示开关                |
+| `preserveNumberPrecision` | `boolean`                                                   | `false`           | JSON 数值精度保护，可能返回字符串 |
+| `auth.headerName`         | `string`                                                    | `Authorization`   | Token 请求头名称                  |
+| `auth.formatToken`        | `(token: string) => string`                                 | `Bearer ${token}` | Token 格式化函数                  |
+| `unauthorized`            | `GzFetchUnauthorizedOptions`                                | 未开启            | 可选的 HTTP 401 统一处理          |
+| `middlewares`             | `readonly GzFetchMiddleware[]`                              | `[]`              | 请求、响应和错误中间件            |
 
 需要覆盖默认成功状态时，只在应用初始化层配置：
 
@@ -212,6 +224,31 @@ configureGzFetch({
 当前稳定 API 没有开放 Axios 的 `paramsSerializer`、`onUploadProgress` 等配置，也
 暂不支持 `PATCH`。业务代码只应传入上表列出的字段；如果后续确有通用场景，再
 通过 gz-pc 统一扩展类型和请求核心。
+
+### JSON 数值精度保护
+
+交易等需要保留长 ID 或高精度数值的项目，在应用初始化时显式开启：
+
+```ts
+configureGzFetch({
+  baseURL: '/api',
+  preserveNumberPrecision: true,
+});
+```
+
+默认关闭，继续使用 Axios 的原有解析规则。开启后，在首次 `JSON.parse` 前处理
+原始 JSON：超出安全整数范围或转为 `number` 会丢失十进制有效数字的数值，
+保留为原始字符串；普通数字仍为 `number`，已有字符串不变。成功响应和 HTTP
+错误响应使用相同规则，`onResponse` 和 `GzFetchError.responseData` 都能获得保精度的值。
+
+例如原始响应 `{"targtAllVarCodeSum":352782533194208303,"count":2}` 会返回
+`{ targtAllVarCodeSum: '352782533194208303', count: 2 }`。
+不能在 `onResponse` 中对已经舍入的值调用 `String()` 来恢复精度。
+
+此配置不处理请求参数，不解包响应，也不转换显式 `responseType: 'text'` 或
+`'blob'` 的内容。独立服务实例同样可通过 `createGzFetch` 开启。可能返回字符串的
+DTO 字段应声明为 `string | number`，接收后不要再无条件调用 `Number()`。
+该能力保护传输和解析过程，不提供高精度算术运算。
 
 ### 跨域凭证
 
@@ -326,12 +363,12 @@ configureGzFetch({
 | `modalMessage`   | `string`     | `当前登录状态已失效，请重新登录。`      |
 | `onUnauthorized` | `() => void` | 无；确认后使用 `window.location.assign` |
 
-为了让普通错误消息和 401 弹窗都继承宿主项目当前的 gg-ui 主题，需要在应用根部的
+为了让普通错误消息和 401 弹窗都继承宿主项目当前的 gz-ui-web 主题，需要在应用根部的
 `ConfigProvider` 内挂载一次 `GzFetchFeedbackProvider`：
 
 ```tsx
 import { GzFetchFeedbackProvider } from '@gz-fronted/gz-pc/fetch';
-import { ConfigProvider } from '@chenhui996/gg-ui';
+import { ConfigProvider } from 'gz-ui-web';
 
 <ConfigProvider themeMode={themeMode}>
   <GzFetchFeedbackProvider>
@@ -340,7 +377,7 @@ import { ConfigProvider } from '@chenhui996/gg-ui';
 </ConfigProvider>;
 ```
 
-该 Provider 使用 `message.useMessage()` 和受控 gg-ui `Modal`，不会在已接入的项目中
+该 Provider 使用 `message.useMessage()` 和受控 gz-ui-web `Modal`，不会在已接入的项目中
 调用脱离 React 上下文的静态反馈 API。因此主题切换时，普通错误消息和 401 弹窗都会
 继续读取宿主 `ConfigProvider` 的主题 Token，无需复制亮色或暗色样式。业务页面不需要
 维护反馈状态。未挂载该 Provider 的已有项目仍会回退到原来的静态 `message.error`，
@@ -464,7 +501,7 @@ formatDate(Date.now(), 'YYYY-MM-DD');
 ```
 
 支持 `string | number | Date | null | undefined`。`null`、`undefined`、空字符串和
-无效日期统一返回 `--`。该入口不依赖 React、ahooks、Axios 或 gg-ui。
+无效日期统一返回 `--`。该入口不依赖 React、ahooks、Axios 或 gz-ui-web。
 
 ## Query 参数
 

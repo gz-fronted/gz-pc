@@ -1,6 +1,6 @@
 {
   "name": "@gz-fronted/gz-pc",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Shared fetch, hooks and utility primitives for GZ frontend applications.",
   "license": "MIT",
   "type": "module",
@@ -54,14 +54,14 @@
   },
   "dependencies": {
     "ahooks": "^3.9.7",
-    "axios": "^1.13.6"
+    "axios": "^1.13.6",
+    "lossless-json": "4.3.1"
   },
   "peerDependencies": {
-    "@chenhui996/gg-ui": "^0.1.1",
-    "react": "^18.0.0 || ^19.0.0"
+    "gz-ui-web": "^1.0.1",
+    "react": "^19.0.0"
   },
   "devDependencies": {
-    "@chenhui996/gg-ui": "0.1.1",
     "@commitlint/cli": "21.2.1",
     "@commitlint/config-conventional": "21.2.0",
     "@eslint/js": "9.39.4",
@@ -70,6 +70,7 @@
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.4",
     "globals": "16.5.0",
+    "gz-ui-web": "1.0.1",
     "husky": "9.1.7",
     "lint-staged": "17.2.0",
     "msw": "2.12.7",

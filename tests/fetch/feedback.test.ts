@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   staticMessageError: vi.fn(),
 }));
 
-vi.mock('@chenhui996/gg-ui', () => ({
+vi.mock('gz-ui-web', () => ({
   message: {
     error: mocks.staticMessageError,
   },

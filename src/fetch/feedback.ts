@@ -1,4 +1,4 @@
-import { message } from '@chenhui996/gg-ui';
+import { message } from 'gz-ui-web';
 
 type FeedbackHostId = symbol;
 type ShowErrorMessage = (content: string) => void;
