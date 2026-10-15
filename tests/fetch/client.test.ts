@@ -37,7 +37,7 @@ interface MockAxiosInstance {
   request: typeof mocks.request;
 }
 
-vi.mock('@chenhui996/gg-ui', () => ({
+vi.mock('gz-ui-web', () => ({
   message: {
     error: mocks.messageError,
   },

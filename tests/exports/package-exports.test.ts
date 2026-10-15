@@ -61,8 +61,8 @@ describe('package exports', () => {
     expect(manifest.peerDependencies).not.toHaveProperty('axios');
     expect(manifest.peerDependencies).not.toHaveProperty('ahooks');
     expect(manifest.peerDependencies).toHaveProperty('react');
-    expect(manifest.peerDependencies).toHaveProperty('@chenhui996/gg-ui');
+    expect(manifest.peerDependencies).toHaveProperty('gz-ui-web');
     expect(manifest.devDependencies).toHaveProperty('react');
-    expect(manifest.devDependencies).toHaveProperty('@chenhui996/gg-ui');
+    expect(manifest.devDependencies).toHaveProperty('gz-ui-web');
   });
 });

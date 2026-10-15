@@ -1,5 +1,5 @@
 import { useEffect, useRef, useSyncExternalStore, type FC } from 'react';
-import { Modal } from '@chenhui996/gg-ui';
+import { Modal } from 'gz-ui-web';
 
 import {
   cancelUnauthorizedModal,
